@@ -1,0 +1,99 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>聊天室</title>
+</head>
+
+<body>
+    <!-- 主页 -->
+    <div id="home" style="display: block;">
+        <input type="text" id="usernameInput" placeholder="昵称">
+        <input type="text" id="roomInput" placeholder="聊天室ID">
+        <button onclick="enterRoom()">进入</button>
+    </div>
+
+    <!-- 聊天室 -->
+    <div id="chatroom" style="display: none;">
+        <ul id="messageList"></ul>
+        <input type="text" id="messageInput">
+        <button onclick="sendMessage()">发送</button>
+        <button onclick="leaveRoom()">退出</button>
+    </div>
+
+    <script>// chat.js
+        const usernameInput = document.getElementById('usernameInput');
+        const roomInput = document.getElementById('roomInput');
+        const messageInput = document.getElementById('messageInput');
+        const messageList = document.getElementById('messageList');
+
+        function enterRoom() {
+            const username = usernameInput.value || '匿名';
+            const roomID = roomInput.value;
+            fetch('/enter_room', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `username=${encodeURIComponent(username)}&room_id=${encodeURIComponent(roomID)}`
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    // 隐藏主页，显示聊天室
+                    document.getElementById('home').style.display = 'none';
+                    document.getElementById('chatroom').style.display = 'block';
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function sendMessage() {
+            const message = messageInput.value;
+            const roomID = roomInput.value;
+            fetch('/send_message', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `message=${encodeURIComponent(message)}&room_id=${encodeURIComponent(roomID)}`
+            })
+                .then(response => response.text())
+                .then(data => {
+                    console.log(data);
+                    // 清空输入框
+                    messageInput.value = '';
+                    // 更新聊天记录
+                    updateMessages();
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function leaveRoom() {
+            // 重置主页，隐藏聊天室
+            document.getElementById('home').style.display = 'block';
+            document.getElementById('chatroom').style.display = 'none';
+        }
+
+        function updateMessages() {
+            const roomID = roomInput.value;
+            fetch(`/get_messages?room_id=${encodeURIComponent(roomID)}`, {
+                method: 'GET'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    // 清空当前消息列表
+                    messageList.innerHTML = '';
+                    // 添加新消息到列表
+                    data.messages.forEach(message => {
+                        const li = document.createElement('li');
+                        li.textContent = `${message.username}: ${message.message}`;
+                        messageList.appendChild(li);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }</script>
+</body>
+
+</html>
