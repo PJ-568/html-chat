@@ -36,7 +36,8 @@
             background-color: #fff;
             border: 1px solid #ccc;
             box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-            border-radius: 5px; /* IE9+ */
+            border-radius: 5px;
+            /* IE9+ */
         }
 
         fieldset {
@@ -63,7 +64,8 @@
             padding: 8px;
             margin-bottom: 10px;
             border: 1px solid #ddd;
-            border-radius: 3px; /* IE9+ */
+            border-radius: 3px;
+            /* IE9+ */
         }
 
         button {
@@ -71,7 +73,8 @@
             background-color: #007BFF;
             color: #fff;
             border: none;
-            border-radius: 3px; /* IE9+ */
+            border-radius: 3px;
+            /* IE9+ */
             cursor: pointer;
         }
 
@@ -109,7 +112,11 @@
     </div>
 
     <script>
-        let currentRoomId = null;
+        if (typeof window.fetch !== 'function') {
+            require('whatwg-fetch');
+        }
+        var currentRoomId = null;
+        var messageUpdateInterval;
 
         document.getElementById('roomForm').addEventListener('submit', function (event) {
             event.preventDefault();
@@ -117,14 +124,15 @@
             const roomId = document.getElementById('roomId').value;
             fetch('/join', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: JSON.stringify({ nickname, roomId })
-            }).then(response => {
+            }).then(function (response) {
                 if (response.ok) {
                     document.getElementById('roomForm').style.display = 'none';
                     document.getElementById('chatArea').style.display = 'block';
                     loadMessages(roomId);
                     currentRoomId = roomId;
+                    startMessageUpdates();
                 }
             });
         });
@@ -133,21 +141,29 @@
             const message = document.getElementById('messageInput').value;
             fetch('/send', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: JSON.stringify({ message, roomId: currentRoomId })
             }).then(loadMessages(currentRoomId));
+            document.getElementById('messageInput').value = '';
+            clearInterval(messageUpdateInterval);
         });
 
         document.getElementById('exitButton').addEventListener('click', function () {
             fetch('/leave', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: JSON.stringify({ roomId: currentRoomId })
             }).then(() => {
+                document.getElementById('chatLog').value = '';
                 document.getElementById('roomForm').style.display = 'block';
                 document.getElementById('chatArea').style.display = 'none';
             });
         });
+
+        function startMessageUpdates() {
+            loadMessages(currentRoomId);
+            messageUpdateInterval = setInterval(() => loadMessages(currentRoomId), 30000); // 30 秒
+        }
 
         function loadMessages(roomId) {
             fetch(`/messages?roomId=${roomId}`).then(response => response.json()).then(updateChatLog);
