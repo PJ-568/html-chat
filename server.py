@@ -88,6 +88,6 @@ if __name__ == '__main__':
             print(f'Error loading SSL certificate or key: {e}')
             print(f'Continuing with HTTP server on port {args.port}')
     else:
-        print('Certificate or key files not found. Continuing with HTTP service.')
+        print(f'Certificate or key files not found. Continuing with HTTP service on port {args.port}')
 
     httpd.serve_forever()
