@@ -1,99 +1,163 @@
-<!-- index.html -->
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hans">
 
 <head>
     <meta charset="UTF-8">
     <title>聊天室</title>
+    <script>
+        // Polyfill for IE9 and below to support addEventListener
+        if (!Element.prototype.addEventListener) {
+            Element.prototype.addEventListener = function (eventName, callback) {
+                this.attachEvent('on' + eventName, callback);
+            };
+        }
+
+        // Polyfill for IE9 and below to support removeEventListener
+        if (!Element.prototype.removeEventListener) {
+            Element.prototype.removeEventListener = function (eventName, callback) {
+                this.detachEvent('on' + eventName, callback);
+            };
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .container {
+            width: 80%;
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border: 1px solid #ccc;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 5px; /* IE9+ */
+        }
+
+        fieldset {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-bottom: 5px;
+        }
+
+        legend {
+            font-weight: bold;
+            padding: 0 10px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        input[type="text"],
+        textarea {
+            box-sizing: border-box;
+            max-width: 100%;
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 3px; /* IE9+ */
+        }
+
+        button {
+            padding: 8px 15px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 3px; /* IE9+ */
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
 </head>
 
 <body>
-    <!-- 主页 -->
-    <div id="home" style="display: block;">
-        <input type="text" id="usernameInput" placeholder="昵称">
-        <input type="text" id="roomInput" placeholder="聊天室ID">
-        <button onclick="enterRoom()">进入</button>
+    <div class="container">
+        <form id="roomForm">
+            <fieldset>
+                <legend>主页</legend>
+                <label for="nickname">昵称</label>
+                <input type="text" id="nickname" name="nickname" value="匿名">
+                <br>
+                <label for="roomId">房间号：</label>
+                <input type="text" id="roomId" name="roomId">
+                <br>
+                <button type="submit">进入聊天室</button>
+            </fieldset>
+        </form>
+
+        <div id="chatArea" style="display: none;">
+            <fieldset>
+                <legend>聊天室</legend>
+                <textarea id="chatLog" rows="10" cols="50" readonly></textarea>
+                <br>
+                <input type="text" id="messageInput">
+                <button id="sendButton">发送</button>
+                <button id="exitButton">退出</button>
+            </fieldset>
+        </div>
     </div>
 
-    <!-- 聊天室 -->
-    <div id="chatroom" style="display: none;">
-        <ul id="messageList"></ul>
-        <input type="text" id="messageInput">
-        <button onclick="sendMessage()">发送</button>
-        <button onclick="leaveRoom()">退出</button>
-    </div>
+    <script>
+        let currentRoomId = null;
 
-    <script>// chat.js
-        const usernameInput = document.getElementById('usernameInput');
-        const roomInput = document.getElementById('roomInput');
-        const messageInput = document.getElementById('messageInput');
-        const messageList = document.getElementById('messageList');
-
-        function enterRoom() {
-            const username = usernameInput.value || '匿名';
-            const roomID = roomInput.value;
-            fetch('/enter_room', {
+        document.getElementById('roomForm').addEventListener('submit', function (event) {
+            event.preventDefault();
+            const nickname = document.getElementById('nickname').value;
+            const roomId = document.getElementById('roomId').value;
+            fetch('/join', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `username=${encodeURIComponent(username)}&room_id=${encodeURIComponent(roomID)}`
-            })
-                .then(response => response.text())
-                .then(data => {
-                    console.log(data);
-                    // 隐藏主页，显示聊天室
-                    document.getElementById('home').style.display = 'none';
-                    document.getElementById('chatroom').style.display = 'block';
-                })
-                .catch(error => console.error('Error:', error));
-        }
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nickname, roomId })
+            }).then(response => {
+                if (response.ok) {
+                    document.getElementById('roomForm').style.display = 'none';
+                    document.getElementById('chatArea').style.display = 'block';
+                    loadMessages(roomId);
+                    currentRoomId = roomId;
+                }
+            });
+        });
 
-        function sendMessage() {
-            const message = messageInput.value;
-            const roomID = roomInput.value;
-            fetch('/send_message', {
+        document.getElementById('sendButton').addEventListener('click', function () {
+            const message = document.getElementById('messageInput').value;
+            fetch('/send', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                body: `message=${encodeURIComponent(message)}&room_id=${encodeURIComponent(roomID)}`
-            })
-                .then(response => response.text())
-                .then(data => {
-                    console.log(data);
-                    // 清空输入框
-                    messageInput.value = '';
-                    // 更新聊天记录
-                    updateMessages();
-                })
-                .catch(error => console.error('Error:', error));
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message, roomId: currentRoomId })
+            }).then(loadMessages(currentRoomId));
+        });
+
+        document.getElementById('exitButton').addEventListener('click', function () {
+            fetch('/leave', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ roomId: currentRoomId })
+            }).then(() => {
+                document.getElementById('roomForm').style.display = 'block';
+                document.getElementById('chatArea').style.display = 'none';
+            });
+        });
+
+        function loadMessages(roomId) {
+            fetch(`/messages?roomId=${roomId}`).then(response => response.json()).then(updateChatLog);
         }
 
-        function leaveRoom() {
-            // 重置主页，隐藏聊天室
-            document.getElementById('home').style.display = 'block';
-            document.getElementById('chatroom').style.display = 'none';
+        function updateChatLog(messages) {
+            const chatLog = document.getElementById('chatLog');
+            chatLog.value = messages.map(msg => `${new Date(msg.timestamp).toLocaleString()}: ${msg.nickname} - ${msg.message}`).join('\n');
         }
-
-        function updateMessages() {
-            const roomID = roomInput.value;
-            fetch(`/get_messages?room_id=${encodeURIComponent(roomID)}`, {
-                method: 'GET'
-            })
-                .then(response => response.json())
-                .then(data => {
-                    // 清空当前消息列表
-                    messageList.innerHTML = '';
-                    // 添加新消息到列表
-                    data.messages.forEach(message => {
-                        const li = document.createElement('li');
-                        li.textContent = `${message.username}: ${message.message}`;
-                        messageList.appendChild(li);
-                    });
-                })
-                .catch(error => console.error('Error:', error));
-        }</script>
+    </script>
 </body>
 
 </html>
