@@ -46,7 +46,10 @@ textarea {
     /* IE9+ */
 }
 
+a,
+a:visited,
 button {
+    text-decoration: none;
     padding: 8px 15px;
     background-color: #007BFF;
     color: #fff;
@@ -56,6 +59,8 @@ button {
     cursor: pointer;
 }
 
+a,
+a:visited:hover,
 button:hover {
     background-color: #0056b3;
 }
