@@ -16,8 +16,9 @@ class ChatConfig:
         self.config = configparser.ConfigParser()
         self.config_file = 'chat_records.ini'
         if not os.path.exists(self.config_file):
-            open(self.config_file, 'w').close()  # Create an empty file if it doesn't exist
-        self.config.read(self.config_file)
+            open(self.config_file, 'w', encoding='utf-8').close()
+        with open(self.config_file, 'r', encoding='utf-8') as config_file:
+            self.config.read_file(config_file)
 
 class ChatServer(http.server.BaseHTTPRequestHandler):
     rooms = {}
@@ -41,7 +42,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_file('index.html')
             elif self.path == '/send_message':
                 self.send_response(302)
-                self.send_header('Location', '/chat')
+                self.send_header('Location', f'/chat?nickname={nickname}&roomid={roomid}')
                 self.end_headers()
             elif self.path.startswith('/chat'):
                 query_params = parse_qs(self.path[6:])
@@ -50,7 +51,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                self.wfile.write(self.generate_chat_html(nickname, roomid).encode('utf-8'))
+                self.wfile.write(self.generate_chat_html(nickname, roomid))
             elif self.path.endswith('.css'):
                 self.send_file(self.path.lstrip('/'))
             else:
@@ -74,8 +75,9 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     if message and len(message) <= self.max_message_length:
                         self.add_message(roomid, nickname, message)
                     self.send_response(302)
-                    self.send_header('Location', f'/chat?nickname={nickname}&roomid={roomid}')
+                    self.send_header('Location', f'/chat?nickname={nickname.encode('utf-8').decode('latin1')}&roomid={roomid.encode('utf-8').decode('latin1')}')
                     self.end_headers()
+                    self.save_rooms()
                 else:
                     self.send_error(429, "Too Many Requests")
             else:
@@ -116,8 +118,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         config = ChatConfig().config
         for roomid, messages in self.rooms.items():
             config[roomid] = {'messages': '\n'.join(messages)}
-        with open(ChatConfig().config_file, 'w') as configfile:
-            config.write(configfile, encoding='utf-8')
+        with open(ChatConfig().config_file, 'w', encoding='utf-8') as configfile:
+            config.write(configfile)
 
     def load_rooms(self):
         config = ChatConfig().config
@@ -125,7 +127,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             self.rooms[section] = config.get(section, 'messages').split('\n')
 
     def generate_chat_html(self, nickname, roomid):
-        chat_log = '<br>'.join(self.rooms.get(roomid, []))
+        chat_log = '\n'.join(self.rooms.get(roomid, []))
         return f'''
 <!DOCTYPE html>
 <html lang="zh-Hans">
@@ -153,13 +155,13 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     </div>
 </body>
 </html>
-'''
+'''.encode('utf-8')
 
     def send_file(self, filename):
         try:
             if filename.endswith('.css'):
                 self.send_response(200)
-                self.send_header('Content-type', 'text/css')
+                self.send_header('Content-type', 'text/css; charset=UTF-8')
             else:
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html; charset=UTF-8')
