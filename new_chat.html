@@ -67,6 +67,7 @@
             background-color: #0056b3;
         }
     </style>
+    <meta http-equiv="refresh" content="60">
 </head>
 
 <body>
@@ -76,10 +77,13 @@
                 <legend>聊天室 - {{ roomid }}</legend>
                 <textarea id="chatLog" rows="10" cols="50" readonly></textarea>
                 <br>
-                <input type="text" id="messageInput">
-                <button id="sendButton">发送</button>
-                <button id="exitButton">退出</button>
+                <label for="messageInput">消息：</label>
+                <input type="text" id="messageInput" name="messageInput">
+                <button type="submit">发送</button>
+                <a href="."><button type="button">退出</button></a>
             </fieldset>
+            <input type="text" id="nickname" name="nickname" value="{{ nickname }}" style="display: none;">
+            <input type="text" id="roomid" name="roomid" value="{{ roomid }}" style="display: none;">
         </form>
     </div>
 </body>
