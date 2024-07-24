@@ -136,6 +136,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     <title>聊天室 - {roomid}</title>
     <meta http-equiv="refresh" content="60">
     <link type="text/css" rel="stylesheet" href="html-chat.css">
+    <meta name="viewport" content="width=192, initial-scale=1.0">
 </head>
 <body>
     <div class="container">
