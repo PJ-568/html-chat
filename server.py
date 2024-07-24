@@ -4,7 +4,7 @@ import socketserver
 import configparser
 import os
 import time
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, quote
 import argparse
 import logging
 
@@ -75,7 +75,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     if message and len(message) <= self.max_message_length:
                         self.add_message(roomid, nickname, message)
                     self.send_response(302)
-                    self.send_header('Location', f'/chat?nickname={nickname.encode('utf-8').decode('latin1')}&roomid={roomid.encode('utf-8').decode('latin1')}')
+                    self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}')
                     self.end_headers()
                     self.save_rooms()
                 else:
