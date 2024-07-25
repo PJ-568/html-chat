@@ -46,10 +46,6 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
             elif self.path == '/index.html':
                 self.send_file('index.html')
-            elif self.path == '/send_message':
-                self.send_response(302)
-                self.send_header('Location', f'/chat?nickname={nickname}&roomid={roomid}')
-                self.end_headers()
             elif self.path.startswith('/chat'):
                 query_params = parse_qs(self.path[6:])
                 nickname = query_params.get('nickname', ['匿名'])[0]
@@ -75,6 +71,17 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 nickname = post_data.get('nickname', ['匿名'])[0]
                 roomid = post_data.get('roomid', ['默认'])[0]
                 message = post_data.get('messageInput', [''])[0]
+
+                # 检查非法字符
+                illegal_chars = ['<', '>', '&', '"', "'"]
+                if any(char in message for char in illegal_chars):
+                    self.send_error(400, "Bad Request: Message contains illegal characters.")
+                    return
+
+                # 长度检查
+                if len(message) > self.max_message_length:
+                    self.send_error(413, "Request Entity Too Large")
+                    return
 
                 # 发送频率上限检查
                 if self.check_message_rate_limit(roomid):
