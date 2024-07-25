@@ -165,7 +165,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         <form action="./send_message" method="post">
             <fieldset>
                 <legend>聊天室 - {roomid}</legend>
-                <iframe src="./log?id={roomid}" frameborder="0"></iframe>
+                <iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe>
                 <br>
                 <label for="messageInput">{nickname}说：</label>
                 <input type="text" id="messageInput" name="messageInput">
@@ -181,7 +181,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 '''.encode('utf-8')
 
     def generate_chat_log_html(self, roomid):
-        chat_log = '<br>'.join(self.rooms.get(roomid, []))
+        messages = self.rooms.get(roomid, [])
+        chat_log = '<br>'.join(messages) if messages else '<p style="color:#ccc">无聊天记录</p>'
         return f'''
 <!DOCTYPE html>
 <html lang="zh-Hans">
