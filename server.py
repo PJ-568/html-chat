@@ -200,7 +200,7 @@ def main():
     httpd = socketserver.TCPServer(server_address, ChatServer)
     httpd.allow_reuse_address = True
 
-    print(f'Starting server on port {args.port}...')
+    print(f'Starting server at http://127.0.0.1:{args.port} ...')
     httpd.serve_forever()
 
 if __name__ == '__main__':

@@ -15,7 +15,6 @@ body {
     border: 1px solid #ccc;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
     border-radius: 5px;
-    /* IE9+ */
 }
 
 fieldset {
@@ -43,19 +42,21 @@ textarea {
     margin-bottom: 10px;
     border: 1px solid #ddd;
     border-radius: 3px;
-    /* IE9+ */
 }
 
 a,
 a:visited,
 button {
+    align-items: center;
+    vertical-align:middle;
+    font-size: medium;
     text-decoration: none;
+    max-height: 33px;
     padding: 8px 15px;
     background-color: #007BFF;
     color: #fff;
     border: none;
     border-radius: 3px;
-    /* IE9+ */
     cursor: pointer;
 }
 
@@ -63,4 +64,22 @@ a,
 a:visited:hover,
 button:hover {
     background-color: #0056b3;
+}
+
+button:active {
+    background-color: #0067b8;
+}
+
+button:focus {
+    outline: 2px solid #007BFF;
+}
+
+@media (max-width: 600px) {
+    .container {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
 }
