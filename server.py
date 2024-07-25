@@ -78,18 +78,17 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     self.send_error(400, "Bad Request: Message contains illegal characters.")
                     return
 
-                # 长度检查
-                if len(message) > self.max_message_length:
-                    self.send_error(413, "Request Entity Too Large")
-                    return
-
                 # 发送频率上限检查
                 if self.check_message_rate_limit(roomid):
                     if message and len(message) <= self.max_message_length:
                         self.add_message(roomid, nickname, message)
+                    else:
+                        self.send_error(413, "Request Entity Too Large")
+                        return
                     self.send_response(302)
                     self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}')
                     self.end_headers()
+                    self.save_rooms() # 不执行会导致用户无法第一时间读取最新聊天记录
                 else:
                     self.send_error(429, "Too Many Requests")
             else:
