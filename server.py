@@ -54,6 +54,14 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid))
+            elif self.path.startswith('/log'):
+                query_string = self.path.split('?', 1)[-1]
+                query_params = parse_qs(query_string)
+                roomid = query_params.get('id', ['默认'])[0]
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(self.generate_chat_log_html(roomid))
             elif self.path.endswith('.css'):
                 self.send_file(self.path.lstrip('/'))
             else:
@@ -143,23 +151,21 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             self.rooms[section] = config.get(section, 'messages').split('\n')
 
     def generate_chat_html(self, nickname, roomid):
-        chat_log = '\n'.join(self.rooms.get(roomid, []))
         return f'''
 <!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
     <meta charset="UTF-8">
     <title>聊天室 - {roomid}</title>
-    <meta http-equiv="refresh" content="60">
     <link type="text/css" rel="stylesheet" href="html-chat.css">
     <meta name="viewport" content="width=192, initial-scale=1.0">
 </head>
 <body>
     <div class="container">
-        <form action="/send_message" method="post">
+        <form action="./send_message" method="post">
             <fieldset>
                 <legend>聊天室 - {roomid}</legend>
-                <textarea id="chatLog" rows="10" cols="50" readonly>{chat_log}</textarea>
+                <iframe src="./log?id={roomid}" frameborder="0"></iframe>
                 <br>
                 <label for="messageInput">{nickname}说：</label>
                 <input type="text" id="messageInput" name="messageInput">
@@ -170,6 +176,25 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             <input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;">
         </form>
     </div>
+</body>
+</html>
+'''.encode('utf-8')
+
+    def generate_chat_log_html(self, roomid):
+        chat_log = '<br>'.join(self.rooms.get(roomid, []))
+        return f'''
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="UTF-8">
+    <title>聊天记录 - {roomid}</title>
+    <meta name="viewport" content="width=192, initial-scale=1.0">
+    <meta http-equiv="refresh" content="60">
+</head>
+<body style="font-family: Arial, sans-serif;">
+    <span>
+        {chat_log}
+    </span>
 </body>
 </html>
 '''.encode('utf-8')
