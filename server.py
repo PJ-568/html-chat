@@ -33,6 +33,11 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         super().__init__(*args, **kwargs)
         self.load_rooms()
 
+        # 创建一个线程，每 120 秒保存一次聊天数据
+        self.save_thread = threading.Thread(target=self.save_rooms_periodically)
+        self.save_thread.daemon = True
+        self.save_thread.start()
+
     def do_GET(self):
         try:
             if self.path == '/':
@@ -188,11 +193,6 @@ def main():
     server_address = ('0.0.0.0', args.port)
     httpd = socketserver.TCPServer(server_address, ChatServer)
     httpd.allow_reuse_address = True
-
-    # 创建一个线程，每 120 秒保存一次聊天数据
-    save_thread = threading.Thread(target=httpd.RequestHandlerClass.save_rooms_periodically)
-    save_thread.daemon = True
-    save_thread.start()
 
     print(f'Starting server on port {args.port}...')
     httpd.serve_forever()
