@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import threading
 import http.server
 import socketserver
 import configparser
@@ -70,14 +71,13 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 roomid = post_data.get('roomid', ['默认'])[0]
                 message = post_data.get('messageInput', [''])[0]
 
-                # Rate limiting
+                # 发送频率上限检查
                 if self.check_message_rate_limit(roomid):
                     if message and len(message) <= self.max_message_length:
                         self.add_message(roomid, nickname, message)
                     self.send_response(302)
                     self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}')
                     self.end_headers()
-                    self.save_rooms()
                 else:
                     self.send_error(429, "Too Many Requests")
             else:
@@ -95,7 +95,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         # Remove old timestamps
         self.message_rate_limit[roomid] = [t for t in self.message_rate_limit[roomid] if t > current_time - 60]
 
-        # Check if we have exceeded the limit
+        # 检查是否达到频率上限
         if len(self.message_rate_limit[roomid]) >= self.max_messages_per_minute:
             return False
 
@@ -120,6 +120,11 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             config[roomid] = {'messages': '\n'.join(messages)}
         with open(ChatConfig().config_file, 'w', encoding='utf-8') as configfile:
             config.write(configfile)
+
+    def save_rooms_periodically(self):
+        while True:
+            self.save_rooms()
+            time.sleep(120)
 
     def load_rooms(self):
         config = ChatConfig().config
@@ -176,13 +181,18 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Simple chat server.')
+    parser = argparse.ArgumentParser(description='聊天室')
     parser.add_argument('--port', type=int, default=8000, help='Port to listen on.')
     args = parser.parse_args()
 
     server_address = ('0.0.0.0', args.port)
     httpd = socketserver.TCPServer(server_address, ChatServer)
     httpd.allow_reuse_address = True
+
+    # 创建一个线程，每 120 秒保存一次聊天数据
+    save_thread = threading.Thread(target=httpd.RequestHandlerClass.save_rooms_periodically)
+    save_thread.daemon = True
+    save_thread.start()
 
     print(f'Starting server on port {args.port}...')
     httpd.serve_forever()
