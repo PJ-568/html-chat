@@ -41,9 +41,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             if self.path == '/':
-                self.send_response(302)
-                self.send_header('Location', '/index.html')
-                self.end_headers()
+                self.send_response(200)
+                self.send_file('index.html')
             elif self.path == '/index.html':
                 self.send_file('index.html')
             elif self.path.startswith('/chat'):
