@@ -188,7 +188,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 <head>
     <meta charset="UTF-8">
     <title>聊天记录 - {roomid}</title>
-    <meta name="viewport" content="width=192, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="refresh" content="60">
 </head>
 <body style="font-family: Arial, sans-serif;">
@@ -218,7 +218,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
 def main():
     parser = argparse.ArgumentParser(description='聊天室')
-    parser.add_argument('--port', type=int, default=8000, help='Port to listen on.')
+    parser.add_argument('--port', type=int, default=2666, help='Port to listen on.')
     args = parser.parse_args()
 
     server_address = ('0.0.0.0', args.port)
