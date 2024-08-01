@@ -153,27 +153,27 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 <!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
-    <meta charset="UTF-8">
-    <title>聊天室 - {roomid}</title>
-    <link type="text/css" rel="stylesheet" href="html-chat.css">
-    <meta name="viewport" content="width=192, initial-scale=1.0">
+	<meta charset="UTF-8">
+	<title>聊天室 - {roomid}</title>
+	<link type="text/css" rel="stylesheet" href="html-chat.css">
+	<meta name="viewport" content="width=192, initial-scale=1.0">
 </head>
 <body>
-    <div class="container">
-        <form action="./send_message" method="post">
-            <fieldset>
-                <legend>聊天室 - {roomid}</legend>
-                <iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe>
-                <br>
-                <label for="messageInput">{nickname}说：</label>
-                <input type="text" id="messageInput" name="messageInput">
-                <button type="submit">发送</button>
-                <a href=".">退出</a>
-            </fieldset>
-            <input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;">
-            <input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;">
-        </form>
-    </div>
+	<div class="container">
+		<form action="./send_message" method="post">
+			<fieldset>
+				<legend>聊天室 - {roomid}</legend>
+				<iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe>
+				<br>
+				<label for="messageInput">{nickname}说：</label>
+				<input type="text" id="messageInput" name="messageInput">
+				<button type="submit">发送</button>
+				<a href=".">退出</a>
+			</fieldset>
+			<input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;">
+			<input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;">
+		</form>
+	</div>
 </body>
 </html>
 '''.encode('utf-8')
@@ -185,15 +185,15 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 <!DOCTYPE html>
 <html lang="zh-Hans">
 <head>
-    <meta charset="UTF-8">
-    <title>聊天记录 - {roomid}</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="refresh" content="60">
+	<meta charset="UTF-8">
+	<title>聊天记录 - {roomid}</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="refresh" content="60">
 </head>
 <body style="font-family: Arial, sans-serif;">
-    <span>
-        {chat_log}
-    </span>
+	<span>
+		{chat_log}
+	</span>
 </body>
 </html>
 '''.encode('utf-8')

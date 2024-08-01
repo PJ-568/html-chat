@@ -1,87 +1,87 @@
 body {
-    font-family: Arial, sans-serif;
-    background-color: #f4f4f4;
-    margin: 0;
-    padding-top: 20px;
-    color: #333;
+	font-family: Arial, sans-serif;
+	background-color: #f4f4f4;
+	margin: 0;
+	padding-top: 20px;
+	color: #333;
 }
 
 .container {
-    box-sizing: border-box;
-    overflow: hidden;
-    width: 100%;
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
-    border-radius: 5px;
+	box-sizing: border-box;
+	overflow: hidden;
+	width: 100%;
+	max-width: 600px;
+	margin: 0 auto;
+	padding: 20px;
+	background-color: #fff;
+	border: 1px solid #ccc;
+	box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+	border-radius: 5px;
 }
 
 fieldset {
-    border: 1px solid #ddd;
-    padding: 10px;
-    margin-bottom: 5px;
+	border: 1px solid #ddd;
+	padding: 10px;
+	margin-bottom: 5px;
 }
 
 legend {
-    font-weight: bold;
-    padding: 0 10px;
+	font-weight: bold;
+	padding: 0 10px;
 }
 
 label {
-    display: block;
-    margin-bottom: 5px;
+	display: block;
+	margin-bottom: 5px;
 }
 
 input[type="text"],
 iframe {
-    box-sizing: border-box;
-    max-width: 100%;
-    width: 100%;
-    padding: 8px;
-    margin-bottom: 10px;
-    border: 1px solid #ddd;
-    border-radius: 3px;
+	box-sizing: border-box;
+	max-width: 100%;
+	width: 100%;
+	padding: 8px;
+	margin-bottom: 10px;
+	border: 1px solid #ddd;
+	border-radius: 3px;
 }
 
 a,
 a:visited,
 button {
-    align-items: center;
-    vertical-align:middle;
-    font-size: medium;
-    text-decoration: none;
-    max-height: 33px;
-    padding: 8px 15px;
-    background-color: #007BFF;
-    color: #fff;
-    border: none;
-    border-radius: 3px;
-    cursor: pointer;
+	align-items: center;
+	vertical-align: middle;
+	font-size: medium;
+	text-decoration: none;
+	max-height: 33px;
+	padding: 8px 15px;
+	background-color: #007BFF;
+	color: #fff;
+	border: none;
+	border-radius: 3px;
+	cursor: pointer;
 }
 
 a,
 a:visited:hover,
 button:hover {
-    background-color: #0056b3;
+	background-color: #0056b3;
 }
 
 button:active {
-    background-color: #0067b8;
+	background-color: #0067b8;
 }
 
 button:focus {
-    outline: 2px solid #007BFF;
+	outline: 2px solid #007BFF;
 }
 
 @media (max-width: 600px) {
-    .container {
-        width: 100%;
-        height: 100%;
-        border: none;
-        border-radius: 0;
-        box-shadow: none;
-    }
+	.container {
+		width: 100%;
+		height: 100%;
+		border: none;
+		border-radius: 0;
+		box-shadow: none;
+	}
 }
