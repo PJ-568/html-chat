@@ -20,6 +20,29 @@ ROOM_ID="默认"
 SERVER_ADDRESS="https://chat.serv.pj568.sbs"
 TEMP_FILE=$(mktemp)
 
+# 全局变量
+## 用于记录当前是否正在执行计时
+COUNTING=$(mktemp)
+echo 0 > $COUNTING
+
+time_downs() {
+    if [ $(($(cat $COUNTING))) -ne 0 ]; then
+        echo 60 > $COUNTING
+        return
+    else
+        (
+            echo 60 > $COUNTING
+            while [ $(($(cat $COUNTING))) -gt 0 ]; do
+                NUM=$(($(cat $COUNTING)))
+                ((NUM--))
+                echo $NUM > $COUNTING
+                sleep 1
+            done
+            echo 0 > $COUNTING
+        ) &
+    fi
+}
+
 # 保存设置
 save_settings() {
     echo "# 昵称 房间号 服务器地址" > "$SETTINGS_FILE"
@@ -86,30 +109,38 @@ edit_info() {
     NICKNAME=${ADDR[0]:-"$NICKNAME"}
     ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
     printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+    echo 0 > $COUNTING
     save_settings
     show_home
 }
 
 # 显示聊天室
 show_chat_room() {
-    # 获取聊天记录
-    (
-        RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
-        echo "65"
-        echo "已请求聊天记录信息：$RESPONSE"
-        echo "70"
-        if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
-            echo "85"
-            export CHAT_LOG="${BASH_REMATCH[1]}"
-            echo "90"
-            export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
+    if [ $(($(cat $COUNTING))) -eq 0 ]; then
+        # 获取聊天记录
+        (
+            RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+            echo "65"
+            echo "已请求聊天记录信息：$RESPONSE"
+            echo "70"
+            echo "# 正在格式化信息……"
+            if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
+                echo "85"
+                export CHAT_LOG="${BASH_REMATCH[1]}"
+                echo "90"
+                export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
+            fi
+            echo "# 正在记录日志……"
+            echo "$CHAT_LOG" > "$TEMP_FILE"
+            echo "100"
+        ) |
+        zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
+        if [ "$?" = 1 ] ; then
+            show_home
         fi
-        echo "$CHAT_LOG" > "$TEMP_FILE"
-        echo "100"
-    ) |
-    zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
-    if [ "$?" = 1 ] ; then
-        show_home
+        time_downs
+    else
+        echo "从缓存读取聊天记录……"
     fi
     CHAT_LOG=$(cat "$TEMP_FILE")
 
@@ -130,6 +161,7 @@ show_chat_room() {
             send_a_message
         ;;
         "刷新消息")
+            echo 0 > $COUNTING
             show_chat_room
         ;;
         "返回主页")
@@ -146,8 +178,15 @@ send_a_message() {
     MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID - 发送消息" --text="$NICKNAME 说:")
 
     if [ ! -z "$MESSAGE" ]; then
-        RETURN=$(curl -s -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
-        echo "已发送消息：$RETURN"
+        (
+            RETURN=$(curl -s -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
+            echo "25"
+            echo "# 正在记录日志……"
+            echo 0 > $COUNTING
+            echo "已发送消息：$RETURN"
+            echo "100"
+        ) |
+        zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=15 --auto-close
     fi
     # 返回聊天室
     show_chat_room
