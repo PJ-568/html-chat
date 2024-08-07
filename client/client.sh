@@ -5,6 +5,8 @@ zenity --version > /dev/null 2>&1 || { echo >&2 "请先安装 zenity 以继续�
 curl --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 curl 以继续使用。"; exit 1; }
 mkdir --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mkdir 以继续使用。"; exit 1; }
 sed --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 sed 以继续使用。"; exit 1; }
+mktemp --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mktemp 以继续使用。"; exit 1; }
+cat --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 cat 以继续使用。"; exit 1; }
 
 # 设置文件路径
 SETTINGS_FILE="${HOME}/.config/html-chat-gtk/setting.txt"
@@ -16,6 +18,7 @@ mkdir -p "${HOME}/.config/html-chat-gtk"
 NICKNAME="匿名"
 ROOM_ID="默认"
 SERVER_ADDRESS="https://chat.serv.pj568.sbs"
+TEMP_FILE=$(mktemp)
 
 # 保存设置
 save_settings() {
@@ -67,7 +70,7 @@ show_home() {
 
 # 更新昵称和房间号
 edit_info() {
-    RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
+    RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号，留空则维持原样" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
     
     if [ "$?" = 1 ] ; then
         show_home
@@ -76,8 +79,8 @@ edit_info() {
     IFS='|'
     read -ra ADDR <<< "$RESPONSE"
 
-    NICKNAME=${ADDR[0]:-"匿名"}
-    ROOM_ID=${ADDR[1]:-"默认"}
+    NICKNAME=${ADDR[0]:-"$NICKNAME"}
+    ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
     printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
     save_settings
     show_home
@@ -86,33 +89,30 @@ edit_info() {
 # 显示聊天室
 show_chat_room() {
     # 获取聊天记录
-    # (
-    #     RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
-    #     echo "65"
-    #     echo "已请求聊天记录信息：$RESPONSE"
-    #     echo "70"
-    #     if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
-    #         echo "85"
-    #         export CHAT_LOG="${BASH_REMATCH[1]}"
-    #         echo "90"
-    #         export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<[^>]*>//g')
-    #     fi
-    #     echo "100"
-    # ) |
-    # zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
-    # if [ "$?" = 1 ] ; then
-    #     show_home
-    # fi
-    RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
-    echo "已请求聊天记录信息：$RESPONSE"
-    if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
-        export CHAT_LOG="${BASH_REMATCH[1]}"
-        export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
+    (
+        RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+        echo "65"
+        echo "已请求聊天记录信息：$RESPONSE"
+        echo "70"
+        if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
+            echo "85"
+            export CHAT_LOG="${BASH_REMATCH[1]}"
+            echo "90"
+            export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<[^>]*>//g')
+        fi
+        echo "$CHAT_LOG" > "$TEMP_FILE"
+        echo "100"
+    ) |
+    zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
+    if [ "$?" = 1 ] ; then
+        show_home
     fi
+    CHAT_LOG=$(cat "$TEMP_FILE")
 
     if [ -z "$CHAT_LOG" ]; then
         printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
-        zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"; exit 2;
+        zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"
+        show_home
     fi
 
     # 显示聊天记录
