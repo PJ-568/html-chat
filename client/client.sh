@@ -65,6 +65,10 @@ show_home() {
             save_settings
             exit 0
         ;;
+        *)
+            zenity --info --text="请选择一个选项。"
+            show_home
+        ;;
     esac
 }
 
