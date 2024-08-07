@@ -1,69 +1,118 @@
-#!/bin/sh
+#!/bin/bash
+
+# 检查依赖
+zenity --version > /dev/null 2>&1 || { echo >&2 "请先安装 zenity 以继续使用。"; exit 1; }
+curl --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 curl 以继续使用。"; exit 1; }
+sed --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 sed 以继续使用。"; exit 1; }
 
 # 默认值
-DEFAULT_NICKNAME="匿名"
-DEFAULT_ROOM_ID="默认"
+NICKNAME="匿名"
+ROOM_ID="默认"
+SERVER_ADDRESS="https://chat.serv.pj568.sbs"
 
-# 函数定义
+# 显示主页
 show_home() {
-    # 显示主页
-    NICKNAME=$(zenity --entry --title="聊天室" --text="请输入您的昵称" --entry-text="$DEFAULT_NICKNAME")
-    ROOM_ID=$(zenity --entry --title="聊天室" --text="请输入聊天室ID" --entry-text="$DEFAULT_ROOM_ID")
-
-    if [ -z "$NICKNAME" ]; then
-        NICKNAME=$DEFAULT_NICKNAME
-    fi
-
-    if [ -z "$ROOM_ID" ]; then
-        ROOM_ID=$DEFAULT_ROOM_ID
-    fi
-
-    OPTIONS=("进入房间" "设置" "退出")
-    RESPONSE=$(zenity --list --title="聊天室" --text="请选择操作" --column="选项" "${OPTIONS[@]}")
+    RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" "进入房间" "更新昵称和房间号" "设置" "退出")
 
     case $RESPONSE in
         "进入房间")
-            show_chat_room "$NICKNAME" "$ROOM_ID"
-            ;;
+            show_chat_room
+        ;;
+        "更新昵称和房间号")
+            edit_info
+        ;;
         "设置")
             show_settings
-            ;;
+        ;;
         "退出")
             exit 0
-            ;;
+        ;;
     esac
 }
 
-show_chat_room() {
-    # 显示聊天室
-    NICKNAME=$1
-    ROOM_ID=$2
+# 更新昵称和房间号
+edit_info() {
+    RESPONSE=$(zenity --forms --title="聊天室 - 更新昵称和房间号" --text="更新昵称和房间号" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
+    IFS='|'
+    read -ra ADDR <<< "$RESPONSE"
 
-    # 获取聊天记录
-    CHAT_LOG=$(curl -s "http://localhost:8000/log?id=$ROOM_ID")
-
-    # 显示聊天记录
-    zenity --text-info --title="聊天室 - $ROOM_ID" --width=400 --height=400 --editable --text="$CHAT_LOG"
-
-    # 输入消息
-    MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID" --text="$NICKNAME 说:")
-
-    if [ ! -z "$MESSAGE" ]; then
-        # 发送消息
-        curl -s -X POST -d "nickname=$NICKNAME&roomid=$ROOM_ID&messageInput=$MESSAGE" http://localhost:8000/send_message
-        # 刷新聊天记录
-        show_chat_room "$NICKNAME" "$ROOM_ID"
-    fi
+    NICKNAME=${ADDR[0]:-"匿名"}
+    ROOM_ID=${ADDR[1]:-"默认"}
+    printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+    show_home
 }
 
-show_settings() {
-    # 显示设置
-    SERVER_ADDRESS=$(zenity --entry --title="设置" --text="设置服务器地址和端口" --entry-text="http://localhost:8000")
-    USE_DIALOG=$(zenity --question --title="设置" --text="是否使用 dialog?" --no-button="否" --yes-button="是")
-    RESET_DEFAULTS=$(zenity --question --title="设置" --text="还原默认设置?" --no-button="否" --yes-button="是")
+# 显示聊天室
+show_chat_room() {
+    # 获取聊天记录
+    # (
+        RESPONSE=$(curl -G -s "$SERVER_ADDRESS/log" --data-urlencode "id=$ROOM_ID")
+        # echo "65"
+        echo "已请求聊天记录信息：$RESPONSE"
+        # echo "70"
+        if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
+            # echo "85"
+            export CHAT_LOG="${BASH_REMATCH[1]}"
+            # echo "90"
+            export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<[^>]*>//g')
+        fi
+        # echo "100"
+    # ) |
+    # zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
 
-    # 处理设置
-    # ...
+    # if [ "$?" = 1 ] ; then
+    #     show_home
+    # fi
+
+    if [ -z "$CHAT_LOG" ]; then
+        zenity --error --text="无法获取聊天记录！"; exit 2;
+    fi
+
+    # 显示聊天记录
+    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --text="$ROOM_ID 的聊天记录：\n\n$CHAT_LOG\n\n请选择操作。" --column="选项" "发送消息" "刷新消息" "返回主页")
+
+    if [ "$?" = 1 ] ; then
+        show_home
+    fi
+    case $CHOICE in
+        "发送消息")
+            send_a_message
+        ;;
+        "刷新消息")
+            show_chat_room
+        ;;
+        "返回主页")
+            show_home
+        ;;
+    esac
+}
+
+# 发送消息
+send_a_message() {
+    MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID - 发送消息" --text="$NICKNAME 说:")
+
+    if [ ! -z "$MESSAGE" ]; then
+        RETURN=$(curl -G -s -X POST "$SERVER_ADDRESS/send_message" --data-urlencode "nickname=$NICKNAME&roomid=$ROOM_ID&messageInput=$MESSAGE")
+        echo "已发送消息：$RETURN"
+    fi
+    # 返回聊天室
+    show_chat_room
+}
+
+# 设置
+show_settings() {
+    RESPONSE=$(zenity --forms --title="聊天室 - 设置" --text="修改设置" --separator="|" --add-entry="服务器地址和端口（$SERVER_ADDRESS）：")
+    
+    if [ "$?" = 1 ] ; then
+        show_home
+    fi
+
+    IFS='|'
+    read -ra ADDR <<< "$RESPONSE"
+
+    SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
+    printf "已修改修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+    show_home
 }
 
 # 主程序入口
