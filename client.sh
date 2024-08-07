@@ -14,6 +14,10 @@ SERVER_ADDRESS="https://chat.serv.pj568.sbs"
 show_home() {
     RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" "进入房间" "更新昵称和房间号" "设置" "退出")
 
+    if [ "$?" = 1 ] ; then
+        exit 0
+    fi
+
     case $RESPONSE in
         "进入房间")
             show_chat_room
@@ -32,7 +36,7 @@ show_home() {
 
 # 更新昵称和房间号
 edit_info() {
-    RESPONSE=$(zenity --forms --title="聊天室 - 更新昵称和房间号" --text="更新昵称和房间号" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
+    RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
     IFS='|'
     read -ra ADDR <<< "$RESPONSE"
 
@@ -46,23 +50,29 @@ edit_info() {
 show_chat_room() {
     # 获取聊天记录
     # (
-        RESPONSE=$(curl -G -s "$SERVER_ADDRESS/log" --data-urlencode "id=$ROOM_ID")
-        # echo "65"
-        echo "已请求聊天记录信息：$RESPONSE"
-        # echo "70"
-        if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
-            # echo "85"
-            export CHAT_LOG="${BASH_REMATCH[1]}"
-            # echo "90"
-            export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<[^>]*>//g')
-        fi
-        # echo "100"
+    #     RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+    #     echo "65"
+    #     echo "已请求聊天记录信息：$RESPONSE"
+    #     echo "70"
+    #     if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
+    #         echo "85"
+    #         export CHAT_LOG="${BASH_REMATCH[1]}"
+    #         echo "90"
+    #         export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<[^>]*>//g')
+    #     fi
+    #     echo "100"
     # ) |
     # zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
 
     # if [ "$?" = 1 ] ; then
     #     show_home
     # fi
+    RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+    echo "已请求聊天记录信息：$RESPONSE"
+    if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
+        export CHAT_LOG="${BASH_REMATCH[1]}"
+        export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
+    fi
 
     if [ -z "$CHAT_LOG" ]; then
         zenity --error --text="无法获取聊天记录！"; exit 2;
@@ -92,7 +102,7 @@ send_a_message() {
     MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID - 发送消息" --text="$NICKNAME 说:")
 
     if [ ! -z "$MESSAGE" ]; then
-        RETURN=$(curl -G -s -X POST "$SERVER_ADDRESS/send_message" --data-urlencode "nickname=$NICKNAME&roomid=$ROOM_ID&messageInput=$MESSAGE")
+        RETURN=$(curl -s -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
         echo "已发送消息：$RETURN"
     fi
     # 返回聊天室
