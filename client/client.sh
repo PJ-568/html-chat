@@ -3,12 +3,42 @@
 # 检查依赖
 zenity --version > /dev/null 2>&1 || { echo >&2 "请先安装 zenity 以继续使用。"; exit 1; }
 curl --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 curl 以继续使用。"; exit 1; }
+mkdir --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mkdir 以继续使用。"; exit 1; }
 sed --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 sed 以继续使用。"; exit 1; }
+
+# 设置文件路径
+SETTINGS_FILE="${HOME}/.config/html-chat-gtk/setting.txt"
+
+# 创建配置目录
+mkdir -p "${HOME}/.config/html-chat-gtk"
 
 # 默认值
 NICKNAME="匿名"
 ROOM_ID="默认"
 SERVER_ADDRESS="https://chat.serv.pj568.sbs"
+
+# 保存设置
+save_settings() {
+    echo "# 昵称 房间号 服务器地址" > "$SETTINGS_FILE"
+    echo "$NICKNAME" >> "$SETTINGS_FILE"
+    echo "$ROOM_ID" >> "$SETTINGS_FILE"
+    echo "$SERVER_ADDRESS" >> "$SETTINGS_FILE"
+}
+
+# 加载设置
+load_settings() {
+    if [ -f "$SETTINGS_FILE" ]; then
+        mapfile -t SETTINGS < <(grep -v '^#' "$SETTINGS_FILE")
+        NICKNAME=${SETTINGS[0]:-"匿名"}
+        ROOM_ID=${SETTINGS[1]:-"默认"}
+        SERVER_ADDRESS=${SETTINGS[2]:-"https://chat.serv.pj568.sbs"}
+    else
+        save_settings
+    fi
+}
+
+# 加载默认值
+load_settings
 
 # 显示主页
 show_home() {
@@ -29,6 +59,7 @@ show_home() {
             show_settings
         ;;
         "退出")
+            save_settings
             exit 0
         ;;
     esac
@@ -43,6 +74,7 @@ edit_info() {
     NICKNAME=${ADDR[0]:-"匿名"}
     ROOM_ID=${ADDR[1]:-"默认"}
     printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+    save_settings
     show_home
 }
 
@@ -121,7 +153,8 @@ show_settings() {
     read -ra ADDR <<< "$RESPONSE"
 
     SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
-    printf "已修改修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+    printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+    save_settings
     show_home
 }
 
