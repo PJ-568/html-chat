@@ -98,7 +98,7 @@ show_chat_room() {
             echo "85"
             export CHAT_LOG="${BASH_REMATCH[1]}"
             echo "90"
-            export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<[^>]*>//g')
+            export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
         fi
         echo "$CHAT_LOG" > "$TEMP_FILE"
         echo "100"
