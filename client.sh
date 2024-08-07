@@ -1,78 +1,70 @@
-#!/bin/bash
+#!/bin/sh
 
-# 加载配置
-source config.ini
+# 默认值
+DEFAULT_NICKNAME="匿名"
+DEFAULT_ROOM_ID="默认"
 
-# 主页界面
-show_home_page() {
-    dialog --title "聊天室" \
-        --form "请选择操作:" 0 0 \
-        0 "昵称:" 1 1 "$NICKNAME" 1 15 20 \
-        1 "房间号:" 2 1 "$ROOM_ID" 2 15 20 \
-        2 "" 3 1 "" 3 1 "" \
-        3 "进入房间" 4 1 "" 4 1 "" \
-        4 "设置" 5 1 "" 5 1 "" \
-        5 "退出" 6 1 "" 6 1 ""
-    case $? in
-        3) show_settings ;;
-        4) enter_room ;;
-        5) exit ;;
+# 函数定义
+show_home() {
+    # 显示主页
+    NICKNAME=$(zenity --entry --title="聊天室" --text="请输入您的昵称" --entry-text="$DEFAULT_NICKNAME")
+    ROOM_ID=$(zenity --entry --title="聊天室" --text="请输入聊天室ID" --entry-text="$DEFAULT_ROOM_ID")
+
+    if [ -z "$NICKNAME" ]; then
+        NICKNAME=$DEFAULT_NICKNAME
+    fi
+
+    if [ -z "$ROOM_ID" ]; then
+        ROOM_ID=$DEFAULT_ROOM_ID
+    fi
+
+    OPTIONS=("进入房间" "设置" "退出")
+    RESPONSE=$(zenity --list --title="聊天室" --text="请选择操作" --column="选项" "${OPTIONS[@]}")
+
+    case $RESPONSE in
+        "进入房间")
+            show_chat_room "$NICKNAME" "$ROOM_ID"
+            ;;
+        "设置")
+            show_settings
+            ;;
+        "退出")
+            exit 0
+            ;;
     esac
 }
-# show_home_page() {
-#     local nickname=$(dialog --stdout --inputbox "请输入昵称：" 10 60)
-#     local room_id=$(dialog --stdout --inputbox "请输入房间号：" 10 60)
 
-#     NICKNAME=${nickname:-"匿名"}
-#     ROOM_ID=${room_id:-"默认"}
+show_chat_room() {
+    # 显示聊天室
+    NICKNAME=$1
+    ROOM_ID=$2
 
-#     dialog --title "聊天室" \
-#            --menu "请选择操作:" 0 0 0 \
-#            "1" "进入房间" \
-#            "2" "设置" \
-#            "3" "退出"
-#     case $? in
-#         1) enter_room ;;
-#         2) show_settings ;;
-#         3) exit ;;
-#     esac
-# }
+    # 获取聊天记录
+    CHAT_LOG=$(curl -s "http://localhost:8000/log?id=$ROOM_ID")
 
-# 设置界面
+    # 显示聊天记录
+    zenity --text-info --title="聊天室 - $ROOM_ID" --width=400 --height=400 --editable --text="$CHAT_LOG"
+
+    # 输入消息
+    MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID" --text="$NICKNAME 说:")
+
+    if [ ! -z "$MESSAGE" ]; then
+        # 发送消息
+        curl -s -X POST -d "nickname=$NICKNAME&roomid=$ROOM_ID&messageInput=$MESSAGE" http://localhost:8000/send_message
+        # 刷新聊天记录
+        show_chat_room "$NICKNAME" "$ROOM_ID"
+    fi
+}
+
 show_settings() {
-    local server_address=$(dialog --stdout --inputbox "设置服务器地址和端口：" 10 60 $SERVER_ADDRESS)
-    local use_dialog=$(dialog --stdout --radiolist "是否使用 dialog：" 10 60 4 "yes" "是" on "no" "否" off)
-    local reset_default=$(dialog --stdout --checklist "还原默认设置：" 10 60 1 "reset" "是" off)
-    
-    if [[ $server_address ]]; then
-        SERVER_ADDRESS=$server_address
-    fi
-    if [[ $use_dialog == "yes" ]]; then
-        USE_DIALOG=true
-    else
-        USE_DIALOG=false
-    fi
-    if [[ $reset_default == "reset" ]]; then
-        # Reset to default settings
-        source defaults.ini
-    fi
-    
-    echo "Settings updated."
+    # 显示设置
+    SERVER_ADDRESS=$(zenity --entry --title="设置" --text="设置服务器地址和端口" --entry-text="http://localhost:8000")
+    USE_DIALOG=$(zenity --question --title="设置" --text="是否使用 dialog?" --no-button="否" --yes-button="是")
+    RESET_DEFAULTS=$(zenity --question --title="设置" --text="还原默认设置?" --no-button="否" --yes-button="是")
+
+    # 处理设置
+    # ...
 }
 
-# 进入房间
-enter_room() {
-    while true; do
-        local message=$(dialog --stdout --inputbox "输入消息：" 10 60)
-        if [[ $message ]]; then
-            curl -X POST -d "nickname=$NICKNAME&roomid=$ROOM_ID&messageInput=$message" http://$SERVER_ADDRESS/send_message
-            sleep 1
-        fi
-        
-        local log=$(curl -s "http://$SERVER_ADDRESS/log?id=$ROOM_ID")
-        dialog --msgbox "$log" 0 0
-    done
-}
-
-# 执行主页界面
-show_home_page
+# 主程序入口
+show_home
