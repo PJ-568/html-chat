@@ -68,6 +68,11 @@ show_home() {
 # 更新昵称和房间号
 edit_info() {
     RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
+    
+    if [ "$?" = 1 ] ; then
+        show_home
+    fi
+
     IFS='|'
     read -ra ADDR <<< "$RESPONSE"
 
@@ -95,7 +100,6 @@ show_chat_room() {
     #     echo "100"
     # ) |
     # zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
-
     # if [ "$?" = 1 ] ; then
     #     show_home
     # fi
@@ -107,11 +111,12 @@ show_chat_room() {
     fi
 
     if [ -z "$CHAT_LOG" ]; then
-        zenity --error --text="无法获取聊天记录！"; exit 2;
+        printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
+        zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"; exit 2;
     fi
 
     # 显示聊天记录
-    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --text="$ROOM_ID 的聊天记录：\n\n$CHAT_LOG\n\n请选择操作。" --column="选项" "发送消息" "刷新消息" "返回主页")
+    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --text="聊天记录和可选操作：" --column="选项" "发送消息" "刷新消息" "返回主页" "$CHAT_LOG")
 
     if [ "$?" = 1 ] ; then
         show_home
@@ -125,6 +130,9 @@ show_chat_room() {
         ;;
         "返回主页")
             show_home
+        ;;
+        *)
+            show_chat_room
         ;;
     esac
 }
