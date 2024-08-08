@@ -25,17 +25,16 @@ TEMP_FILE=$(mktemp)
 ## 用于记录当前是否正在执行计时
 COUNTING=$(mktemp)
 
+# 计时器归零
 times_down_to_zero() {
     echo 0 > $COUNTING
 }
 
 times_down_to_zero
 
+# 计时器
 times_down() {
-    if [ $(($(cat $COUNTING))) -ne 0 ]; then
-        echo 60 > $COUNTING
-        return
-    else
+    if [ $(($(cat $COUNTING))) -eq 0 ]; then
         (
             echo 60 > $COUNTING
             while [ $(($(cat $COUNTING))) -gt 0 ]; do
@@ -77,48 +76,56 @@ load_settings
 show_home() {
     RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" "进入房间" "更新昵称和房间号" "设置" "退出")
 
-    if [ "$?" = 0 ] ; then
-        case $RESPONSE in
-            "进入房间")
-                show_chat_room
+    case $? in
+         0)
+            case $RESPONSE in
+                "进入房间")
+                    show_chat_room
+                ;;
+                "更新昵称和房间号")
+                    edit_info
+                ;;
+                "设置")
+                    show_settings
+                ;;
+                "退出")
+                    save_settings
+                    exit 0
+                ;;
+                *)
+                    zenity --info --text="请选择一个选项。"
+                    show_home
+                ;;
+            esac
             ;;
-            "更新昵称和房间号")
-                edit_info
-            ;;
-            "设置")
-                show_settings
-            ;;
-            "退出")
-                save_settings
-                exit 0
-            ;;
-            *)
-                zenity --info --text="请选择一个选项。"
-                show_home
-            ;;
-        esac
-    elif [ "$?" = 1 ] ; then
-        exit 0
-    fi
+         1)
+            exit 0;;
+        -1)
+            zenity --error --text="发生意外错误。";;
+    esac
 }
 
 # 更新昵称和房间号
 edit_info() {
     RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号，留空则维持原样" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
-    
-    if [ "$?" = 0 ] ; then
-        IFS='|'
-        read -ra ADDR <<< "$RESPONSE"
 
-        NICKNAME=${ADDR[0]:-"$NICKNAME"}
-        ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
-        printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
-        times_down_to_zero
-        save_settings
-        show_home
-    elif [ "$?" = 1 ] ; then
-        show_home
-    fi
+    case $? in
+         0)
+            IFS='|'
+            read -ra ADDR <<< "$RESPONSE"
+
+            NICKNAME=${ADDR[0]:-"$NICKNAME"}
+            ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
+            printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+            times_down_to_zero
+            save_settings
+            show_home
+            ;;
+         1)
+            show_home;;
+        -1)
+            zenity --error --text="发生意外错误。";;
+    esac
 }
 
 # 显示聊天室
@@ -142,99 +149,117 @@ show_chat_room() {
             echo "100"
         ) |
         zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
-        if [ "$?" = 1 ] ; then
-            show_home
-        fi
-        times_down
+        case $? in
+            1)
+                show_home;;
+            -1)
+                zenity --error --text="发生意外错误。";;
+        esac
     else
         echo "从缓存读取聊天记录……"
     fi
     CHAT_LOG=$(cat "$TEMP_FILE")
 
+    # 判断聊天记录是否正常获取
     if [ -z "$CHAT_LOG" ]; then
         printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
         zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"
         times_down_to_zero
         show_home
+    else
+        times_down
+        printf "聊天记录：\n$CHAT_LOG\n"
     fi
 
     # 显示聊天记录
-    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=60 --text="聊天记录和可选操作：" --column="选项" "发送消息" "返回主页" "$CHAT_LOG")
+    TIMEOUT=$(($(cat $COUNTING)))
+    ((TIMEOUT+=4))
+    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="可选操作和聊天记录：" --column="选项和消息" "发送消息" "返回主页" "$CHAT_LOG")
 
-    if [ "$?" = 0 ] ; then
-        case $CHOICE in
-            "发送消息")
-                send_a_message
-            ;;
-            "返回主页")
-                show_home
-            ;;
-            *)
-                show_chat_room
-            ;;
-        esac
-    elif [ "$?" = 1 ] ; then
-        show_home
-    elif [ "$?" = 5 ]; then
-        times_down_to_zero
-        show_chat_room
-    fi
+    case $? in
+         0)
+            case $CHOICE in
+                "发送消息")
+                    send_a_message
+                ;;
+                "返回主页")
+                    show_home
+                ;;
+                *)
+                    show_chat_room
+                ;;
+            esac;;
+         1)
+            show_home;;
+         5)
+            show_chat_room;;
+        -1)
+            zenity --error --text="发生意外错误。";;
+    esac
 }
 
 # 发送消息
 send_a_message() {
     MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID - 发送消息" --text="$NICKNAME 说:")
 
-    if [ "$?" = 0 ] ; then
-        if [ ! -z "$MESSAGE" ]; then
-            (
-                RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
-                echo "15"
-                echo "# 正在处理信息……"
-                times_down_to_zero
-                echo "25"
-                ech
-                if [ "$RETURN" = "302" ]; then
-                    echo "" > "$TEMP_FILE"
-                else
-                    echo "$RETURN" > "$TEMP_FILE"
-                fi
-                echo "已发送消息：$RETURN"
-                echo "100"
-            ) |
-            zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=5 --auto-close
-        fi
+    case $? in
+         0)
+            if [ ! -z "$MESSAGE" ]; then
+                (
+                    RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
+                    echo "15"
+                    echo "# 正在处理信息……"
+                    times_down_to_zero
+                    echo "25"
+                    ech
+                    if [ "$RETURN" = "302" ]; then
+                        echo "" > "$TEMP_FILE"
+                    else
+                        echo "$RETURN" > "$TEMP_FILE"
+                    fi
+                    echo "已发送消息：$RETURN"
+                    echo "100"
+                ) |
+                zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=5 --auto-close
+            fi
 
-        # 判断发送是否成功
-        ERR_CODE=$(cat "$TEMP_FILE")
-        if [ ! -z "$ERR_CODE" ]; then
-            printf "消息发送失败：\n- 错误代码：$ERR_CODE\n"
-            zenity --error --text="消息发送失败：\n错误代码：$ERR_CODE"
-            send_a_message
-        else
-            # 返回聊天室
-            show_chat_room
-        fi
-    elif [ "$?" = 1 ]; then
-        show_chat_room
-    fi
+            # 判断发送是否成功
+            ERR_CODE=$(cat "$TEMP_FILE")
+            if [ ! -z "$ERR_CODE" ]; then
+                printf "消息发送失败：\n- 错误代码：$ERR_CODE\n"
+                zenity --error --text="消息发送失败：\n错误代码：$ERR_CODE"
+                send_a_message
+            else
+                # 返回聊天室
+                show_chat_room
+            fi
+            ;;
+         1)
+            show_chat_room;;
+        -1)
+            zenity --error --text="发生意外错误。";;
+    esac
 }
 
 # 设置
 show_settings() {
     RESPONSE=$(zenity --forms --title="聊天室 - 设置" --text="修改设置" --separator="|" --add-entry="服务器地址和端口（$SERVER_ADDRESS）：")
-    
-    if [ "$?" = 0 ] ; then
-        IFS='|'
-        read -ra ADDR <<< "$RESPONSE"
 
-        SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
-        printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
-        save_settings
-        show_home
-    elif [ "$?" = 1 ]; then
-        show_home
-    fi
+    case $? in
+         0)
+            IFS='|'
+            read -ra ADDR <<< "$RESPONSE"
+
+            SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
+            printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+            save_settings
+            show_home
+            ;;
+         1)
+            show_home;;
+        -1)
+            zenity --error --text="发生意外错误。";;
+    esac
 }
 
 # 主程序入口
