@@ -173,6 +173,9 @@ show_chat_room() {
 
     # 显示聊天记录
     TIMEOUT=$(($(cat $COUNTING)))
+    if [ $TIMEOUT -eq 0 ]; then
+        TIMEOUT=60
+    fi
     ((TIMEOUT+=4))
     CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="可选操作和聊天记录：" --column="选项和消息" "发送消息" "返回主页" "$CHAT_LOG")
 
