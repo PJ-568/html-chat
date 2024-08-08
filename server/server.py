@@ -53,14 +53,29 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 query_params = parse_qs(self.path[6:])
                 nickname = query_params.get('nickname', ['匿名'])[0]
                 roomid = query_params.get('roomid', ['默认'])[0]
+                message = query_params.get('messageInput', [''])[0]
+                
+                # 检查非法字符
+                illegal_chars = ['<', '>', '&', '"', "'"]
+                if any(char in roomid for char in illegal_chars):
+                    self.send_msg_error(400, "Bad Request: RoomID contains illegal characters.<br>房间号包含非法字符。")
+                    return
+
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
-                self.wfile.write(self.generate_chat_html(nickname, roomid))
+                self.wfile.write(self.generate_chat_html(nickname, roomid, message))
             elif self.path.startswith('/log'):
                 query_string = self.path.split('?', 1)[-1]
                 query_params = parse_qs(query_string)
                 roomid = query_params.get('id', ['默认'])[0]
+                
+                # 检查非法字符
+                illegal_chars = ['<', '>', '&', '"', "'"]
+                if any(char in roomid for char in illegal_chars):
+                    self.send_msg_error(400, "Bad Request: RoomID contains illegal characters.<br>房间号包含非法字符。")
+                    return
+
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
@@ -71,10 +86,10 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(self.generate_css())
             else:
-                self.send_error(404)
+                self.send_msg_error(404, "Not Found.<br>未找到该资源。")
         except Exception as e:
             logging.error(f"Error processing GET request: {e}")
-            self.send_error(500)
+            self.send_msg_error(500, "Server got itself in trouble.<br>服务器出错。")
 
     def do_POST(self):
         try:
@@ -89,7 +104,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 # 检查非法字符
                 illegal_chars = ['<', '>', '&', '"', "'"]
                 if any(char in message for char in illegal_chars):
-                    self.send_error(400, "Bad Request: Message contains illegal characters.")
+                    self.send_msg_error(400, f"Bad Request: Message contains illegal characters.<br>消息包含非法字符。", f"<a href='./chat?nickname={nickname}&roomid={roomid}'>返回</a>")
                     return
 
                 # 发送频率上限检查
@@ -97,19 +112,19 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     if message and len(message) <= self.max_message_length:
                         self.add_message(roomid, nickname, message)
                     else:
-                        self.send_error(413, "Request Entity Too Large or is Null")
+                        self.send_msg_error(413, f"Request Entity Too Large or is Null.<br>消息过长或为空。", f"<a href='./chat?nickname={nickname}&roomid={roomid}&messageInput={message}'>返回</a>")
                         return
                     self.send_response(302)
                     self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}')
                     self.end_headers()
                     self.save_rooms() # 不执行会导致用户无法第一时间读取最新聊天记录
                 else:
-                    self.send_error(429, "Too Many Requests")
+                    self.send_msg_error(429, f"Too Many Requests.<br>请求过于频繁，请稍后重试。", f"<a href='./send_message?nickname={nickname}&roomid={roomid}&messageInput={message}'>重试</a><a href='./chat?nickname={nickname}&roomid={roomid}&messageInput={message}'>返回</a>")
             else:
-                self.send_error(404)
+                self.send_msg_error(404, "Not Found.<br>未找到该资源。")
         except Exception as e:
             logging.error(f"Error processing POST request: {e}")
-            self.send_error(500)
+            self.send_msg_error(500, "Server got itself in trouble.<br>服务器出错。")
 
     def check_message_rate_limit(self, roomid):
         current_time = time.time()
@@ -157,18 +172,29 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             self.rooms[section] = config.get(section, 'messages').split('\n')
 
     def generate_css(self):
-        return f'''body {{font-family: Arial, sans-serif;background-color: #f4f4f4;margin: 0;padding-top: 20px;color: #333;}}.container {{box-sizing: border-box;overflow: hidden;width: 100%;max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border: 1px solid #ccc;box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);border-radius: 5px;}}fieldset {{border: 1px solid #ddd;padding: 10px;margin-bottom: 5px;}}legend {{font-weight: bold;padding: 0 10px;}}label {{display: block;margin-bottom: 5px;}}input[type="text"],iframe {{box-sizing: border-box;max-width: 100%;width: 100%;padding: 8px;margin-bottom: 10px;border: 1px solid #ddd;border-radius: 3px;}}a,a:visited,button {{align-items: center;text-decoration: none;padding: 8px 15px;margin-right: 5px;background-color: #007BFF;color: #fff;border: none;border-radius: 3px;cursor: pointer;}}a:hover,a:visited:hover,button:hover {{background-color: #0056b3;}}button:active {{background-color: #0067b8;}}@media (max-width: 600px) {{.container {{width: 100%;height: 100%;border: none;border-radius: 0;box-shadow: none;}}}}'''.encode('utf-8')
+        return f'''body {{font-family: Arial, sans-serif;background-color: #f4f4f4;margin: 0;padding-top: 20px;color: #333;}}.container {{box-sizing: border-box;overflow: hidden;width: 100%;max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border: 1px solid #ccc;box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);border-radius: 5px;}}fieldset {{border: 1px solid #ddd;padding: 10px;margin-bottom: 5px;}}legend {{font-weight: bold;padding: 0 10px;}}label {{display: block;margin-bottom: 5px;}}input[type="text"],iframe,.content {{box-sizing: border-box;max-width: 100%;width: 100%;padding: 8px;margin-bottom: 10px;border: 1px solid #ddd;border-radius: 3px;}}a,a:visited,button {{align-items: center;text-decoration: none;padding: 8px 15px;margin-right: 5px;background-color: #007BFF;color: #fff;border: none;border-radius: 3px;cursor: pointer;}}a:hover,a:visited:hover,button:hover {{background-color: #0056b3;}}button:active {{background-color: #0067b8;}}@media (max-width: 600px) {{.container {{width: 100%;height: 100%;border: none;border-radius: 0;box-shadow: none;}}}}'''.encode('utf-8')
 
     def generate_home_html(self, nickname, roomid):
         return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天室</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>主页</legend><label for="nickname">昵称：</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">房间号：</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">进入聊天室</button></fieldset></form></div></body></html>'''.encode('utf-8')
 
-    def generate_chat_html(self, nickname, roomid):
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天室 - {roomid}</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>聊天室 - {roomid}</legend><iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe><br><label for="messageInput">{nickname}说：</label><input type="text" id="messageInput" name="messageInput"><button type="submit">发送</button><a href=".?nickname={nickname}&roomid={roomid}">退出</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
+    def generate_chat_html(self, nickname, roomid, message):
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天室 - {roomid}</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>聊天室 - {roomid}</legend><iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe><br><label for="messageInput">{nickname}说：</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">发送</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}">退出</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
 
     def generate_chat_log_html(self, roomid):
         messages = self.rooms.get(roomid, [])
         chat_log = '<br>'.join(messages) if messages else '<p style="color:#ccc">无聊天记录</p>'
         return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天记录 - {roomid}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="60"></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
+
+    def generate_error_html(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页</a>"):
+        if not errorMsg:
+            errorMsg = f'错误代码：{errorCode}'
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>错误：{errorCode}</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><fieldset><legend>错误：{errorCode}</legend><div class="content">{errorMsg}</div>{buttons}</fieldset></div></body></html>'''.encode('utf-8')
+
+    def send_msg_error(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页</a>"):
+        self.send_response(errorCode)
+        self.send_header('Content-type', 'text/html')
+        self.end_headers()
+        self.wfile.write(self.generate_error_html(errorCode, errorMsg, buttons))
 
     def send_file(self, filename):
         try:
@@ -184,7 +210,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.wfile.write(file.read())
         except FileNotFoundError:
             logging.error(f"File not found: {filename}")
-            self.send_error(404)
+            self.send_msg_error(404, "Not Found.<br>未找到该资源。")
 
 
 def main():
