@@ -25,8 +25,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     rooms = {}
     max_rooms = 32
     max_messages_per_room = 50
-    max_message_length = 2048
-    max_messages_per_minute = 20
+    max_message_length = 1024
+    max_messages_per_minute = 45
     message_rate_limit = {}  # To track messages per minute
 
     def __init__(self, *args, **kwargs):
@@ -97,7 +97,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     if message and len(message) <= self.max_message_length:
                         self.add_message(roomid, nickname, message)
                     else:
-                        self.send_error(413, "Request Entity Too Large")
+                        self.send_error(413, "Request Entity Too Large or is Null")
                         return
                     self.send_response(302)
                     self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}')
