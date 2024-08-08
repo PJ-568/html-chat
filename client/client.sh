@@ -7,6 +7,7 @@ mkdir --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mkdi
 sed --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 sed 以继续使用。"; exit 1; }
 mktemp --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mktemp 以继续使用。"; exit 1; }
 cat --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 cat 以继续使用。"; exit 1; }
+grep --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 grep 以继续使用。"; exit 1; }
 
 # 设置文件路径
 SETTINGS_FILE="${HOME}/.config/html-chat-gtk/setting.txt"
@@ -18,9 +19,9 @@ mkdir -p "${HOME}/.config/html-chat-gtk"
 NICKNAME="匿名"
 ROOM_ID="默认"
 SERVER_ADDRESS="https://chat.serv.pj568.sbs"
-TEMP_FILE=$(mktemp)
 
 # 全局变量
+TEMP_FILE=$(mktemp)
 ## 用于记录当前是否正在执行计时
 COUNTING=$(mktemp)
 echo 0 > $COUNTING
