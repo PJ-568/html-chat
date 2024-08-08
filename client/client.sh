@@ -159,15 +159,12 @@ show_chat_room() {
     fi
 
     # 显示聊天记录
-    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=60 --text="聊天记录和可选操作：" --column="选项" "发送消息" "刷新消息" "返回主页" "$CHAT_LOG")
+    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=60 --text="聊天记录和可选操作：" --column="选项" "发送消息" "返回主页" "$CHAT_LOG")
 
     if [ "$?" = 0 ] ; then
         case $CHOICE in
             "发送消息")
                 send_a_message
-            ;;
-            "刷新消息")
-                show_chat_room
             ;;
             "返回主页")
                 show_home
