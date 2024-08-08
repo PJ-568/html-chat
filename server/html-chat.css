@@ -50,11 +50,9 @@ a,
 a:visited,
 button {
 	align-items: center;
-	vertical-align: middle;
-	font-size: medium;
 	text-decoration: none;
-	max-height: 33px;
 	padding: 8px 15px;
+	margin-right: 5px;
 	background-color: #007BFF;
 	color: #fff;
 	border: none;

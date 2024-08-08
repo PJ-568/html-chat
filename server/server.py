@@ -40,10 +40,15 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            if self.path == '/':
-                self.send_file('index.html')
-            elif self.path == '/index.html':
-                self.send_file('index.html')
+            if self.path == '/' or self.path == '/index.html' or self.path.startswith('/?') or self.path.startswith('/index.html?'):
+                query_string = self.path.split('?', 1)[-1]
+                query_params = parse_qs(query_string)
+                nickname = query_params.get('nickname', [''])[0]
+                roomid = query_params.get('roomid', [''])[0]
+                self.send_response(200)
+                self.send_header('Content-type', 'text/html')
+                self.end_headers()
+                self.wfile.write(self.generate_home_html(nickname, roomid))
             elif self.path.startswith('/chat'):
                 query_params = parse_qs(self.path[6:])
                 nickname = query_params.get('nickname', ['匿名'])[0]
@@ -61,7 +66,10 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(self.generate_chat_log_html(roomid))
             elif self.path.endswith('.css'):
-                self.send_file(self.path.lstrip('/'))
+                self.send_response(200)
+                self.send_header('Content-type', 'text/css')
+                self.end_headers()
+                self.wfile.write(self.generate_css())
             else:
                 self.send_error(404)
         except Exception as e:
@@ -148,8 +156,14 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         for section in config.sections():
             self.rooms[section] = config.get(section, 'messages').split('\n')
 
+    def generate_css(self):
+        return f'''body {{font-family: Arial, sans-serif;background-color: #f4f4f4;margin: 0;padding-top: 20px;color: #333;}}.container {{box-sizing: border-box;overflow: hidden;width: 100%;max-width: 600px;margin: 0 auto;padding: 20px;background-color: #fff;border: 1px solid #ccc;box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);border-radius: 5px;}}fieldset {{border: 1px solid #ddd;padding: 10px;margin-bottom: 5px;}}legend {{font-weight: bold;padding: 0 10px;}}label {{display: block;margin-bottom: 5px;}}input[type="text"],iframe {{box-sizing: border-box;max-width: 100%;width: 100%;padding: 8px;margin-bottom: 10px;border: 1px solid #ddd;border-radius: 3px;}}a,a:visited,button {{align-items: center;text-decoration: none;padding: 8px 15px;margin-right: 5px;background-color: #007BFF;color: #fff;border: none;border-radius: 3px;cursor: pointer;}}a:hover,a:visited:hover,button:hover {{background-color: #0056b3;}}button:active {{background-color: #0067b8;}}@media (max-width: 600px) {{.container {{width: 100%;height: 100%;border: none;border-radius: 0;box-shadow: none;}}}}'''.encode('utf-8')
+
+    def generate_home_html(self, nickname, roomid):
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天室</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>主页</legend><label for="nickname">昵称：</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">房间号：</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">进入聊天室</button></fieldset></form></div></body></html>'''.encode('utf-8')
+
     def generate_chat_html(self, nickname, roomid):
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天室 - {roomid}</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>聊天室 - {roomid}</legend><iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe><br><label for="messageInput">{nickname}说：</label><input type="text" id="messageInput" name="messageInput"><button type="submit">发送</button><a href=".">退出</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天室 - {roomid}</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>聊天室 - {roomid}</legend><iframe src="./log?id={roomid}" frameborder="0">加载中……</iframe><br><label for="messageInput">{nickname}说：</label><input type="text" id="messageInput" name="messageInput"><button type="submit">发送</button><a href=".?nickname={nickname}&roomid={roomid}">退出</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
 
     def generate_chat_log_html(self, roomid):
         messages = self.rooms.get(roomid, [])
