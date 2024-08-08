@@ -77,48 +77,48 @@ load_settings
 show_home() {
     RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" "进入房间" "更新昵称和房间号" "设置" "退出")
 
-    if [ "$?" = 1 ] ; then
+    if [ "$?" = 0 ] ; then
+        case $RESPONSE in
+            "进入房间")
+                show_chat_room
+            ;;
+            "更新昵称和房间号")
+                edit_info
+            ;;
+            "设置")
+                show_settings
+            ;;
+            "退出")
+                save_settings
+                exit 0
+            ;;
+            *)
+                zenity --info --text="请选择一个选项。"
+                show_home
+            ;;
+        esac
+    elif [ "$?" = 1 ] ; then
         exit 0
     fi
-
-    case $RESPONSE in
-        "进入房间")
-            show_chat_room
-        ;;
-        "更新昵称和房间号")
-            edit_info
-        ;;
-        "设置")
-            show_settings
-        ;;
-        "退出")
-            save_settings
-            exit 0
-        ;;
-        *)
-            zenity --info --text="请选择一个选项。"
-            show_home
-        ;;
-    esac
 }
 
 # 更新昵称和房间号
 edit_info() {
     RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号，留空则维持原样" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
     
-    if [ "$?" = 1 ] ; then
+    if [ "$?" = 0 ] ; then
+        IFS='|'
+        read -ra ADDR <<< "$RESPONSE"
+
+        NICKNAME=${ADDR[0]:-"$NICKNAME"}
+        ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
+        printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+        times_down_to_zero
+        save_settings
+        show_home
+    elif [ "$?" = 1 ] ; then
         show_home
     fi
-
-    IFS='|'
-    read -ra ADDR <<< "$RESPONSE"
-
-    NICKNAME=${ADDR[0]:-"$NICKNAME"}
-    ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
-    printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
-    times_down_to_zero
-    save_settings
-    show_home
 }
 
 # 显示聊天室
@@ -159,62 +159,85 @@ show_chat_room() {
     fi
 
     # 显示聊天记录
-    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --text="聊天记录和可选操作：" --column="选项" "发送消息" "刷新消息" "返回主页" "$CHAT_LOG")
+    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=60 --text="聊天记录和可选操作：" --column="选项" "发送消息" "刷新消息" "返回主页" "$CHAT_LOG")
 
-    if [ "$?" = 1 ] ; then
+    if [ "$?" = 0 ] ; then
+        case $CHOICE in
+            "发送消息")
+                send_a_message
+            ;;
+            "刷新消息")
+                show_chat_room
+            ;;
+            "返回主页")
+                show_home
+            ;;
+            *)
+                show_chat_room
+            ;;
+        esac
+    elif [ "$?" = 1 ] ; then
         show_home
+    elif [ "$?" = 5 ]; then
+        times_down_to_zero
+        show_chat_room
     fi
-    case $CHOICE in
-        "发送消息")
-            send_a_message
-        ;;
-        "刷新消息")
-            times_down_to_zero
-            show_chat_room
-        ;;
-        "返回主页")
-            show_home
-        ;;
-        *)
-            show_chat_room
-        ;;
-    esac
 }
 
 # 发送消息
 send_a_message() {
     MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID - 发送消息" --text="$NICKNAME 说:")
 
-    if [ ! -z "$MESSAGE" ]; then
-        (
-            RETURN=$(curl -s -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
-            echo "25"
-            echo "# 正在记录日志……"
-            times_down_to_zero
-            echo "已发送消息：$RETURN"
-            echo "100"
-        ) |
-        zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=15 --auto-close
+    if [ "$?" = 0 ] ; then
+        if [ ! -z "$MESSAGE" ]; then
+            (
+                RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
+                echo "15"
+                echo "# 正在处理信息……"
+                times_down_to_zero
+                echo "25"
+                ech
+                if [ "$RETURN" = "302" ]; then
+                    echo "" > "$TEMP_FILE"
+                else
+                    echo "$RETURN" > "$TEMP_FILE"
+                fi
+                echo "已发送消息：$RETURN"
+                echo "100"
+            ) |
+            zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=5 --auto-close
+        fi
+
+        # 判断发送是否成功
+        ERR_CODE=$(cat "$TEMP_FILE")
+        if [ ! -z "$ERR_CODE" ]; then
+            printf "消息发送失败：\n- 错误代码：$ERR_CODE\n"
+            zenity --error --text="消息发送失败：\n错误代码：$ERR_CODE"
+            send_a_message
+        else
+            # 返回聊天室
+            show_chat_room
+        fi
+    elif [ "$?" = 1 ]; then
+        show_chat_room
     fi
-    # 返回聊天室
-    show_chat_room
 }
 
 # 设置
 show_settings() {
     RESPONSE=$(zenity --forms --title="聊天室 - 设置" --text="修改设置" --separator="|" --add-entry="服务器地址和端口（$SERVER_ADDRESS）：")
     
-    if [ "$?" = 1 ] ; then
+    if [ "$?" = 0 ] ; then
+        IFS='|'
+        read -ra ADDR <<< "$RESPONSE"
+
+        SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
+        printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+        save_settings
+        show_home
+    elif [ "$?" = 1 ]; then
         show_home
     fi
-
-    IFS='|'
-    read -ra ADDR <<< "$RESPONSE"
-
-    SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
-    printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
-    save_settings
-    show_home
 }
 
 # 主程序入口
