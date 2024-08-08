@@ -24,9 +24,14 @@ SERVER_ADDRESS="https://chat.serv.pj568.sbs"
 TEMP_FILE=$(mktemp)
 ## 用于记录当前是否正在执行计时
 COUNTING=$(mktemp)
-echo 0 > $COUNTING
 
-time_downs() {
+times_down_to_zero() {
+    echo 0 > $COUNTING
+}
+
+times_down_to_zero
+
+times_down() {
     if [ $(($(cat $COUNTING))) -ne 0 ]; then
         echo 60 > $COUNTING
         return
@@ -39,13 +44,14 @@ time_downs() {
                 echo $NUM > $COUNTING
                 sleep 1
             done
-            echo 0 > $COUNTING
+            times_down_to_zero
         ) &
     fi
 }
 
 # 保存设置
 save_settings() {
+    echo "保存设置。"
     echo "# 昵称 房间号 服务器地址" > "$SETTINGS_FILE"
     echo "$NICKNAME" >> "$SETTINGS_FILE"
     echo "$ROOM_ID" >> "$SETTINGS_FILE"
@@ -110,15 +116,15 @@ edit_info() {
     NICKNAME=${ADDR[0]:-"$NICKNAME"}
     ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
     printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
-    echo 0 > $COUNTING
+    times_down_to_zero
     save_settings
     show_home
 }
 
 # 显示聊天室
 show_chat_room() {
+    # 获取聊天记录
     if [ $(($(cat $COUNTING))) -eq 0 ]; then
-        # 获取聊天记录
         (
             RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
             echo "65"
@@ -139,7 +145,7 @@ show_chat_room() {
         if [ "$?" = 1 ] ; then
             show_home
         fi
-        time_downs
+        times_down
     else
         echo "从缓存读取聊天记录……"
     fi
@@ -148,6 +154,7 @@ show_chat_room() {
     if [ -z "$CHAT_LOG" ]; then
         printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
         zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"
+        times_down_to_zero
         show_home
     fi
 
@@ -162,7 +169,7 @@ show_chat_room() {
             send_a_message
         ;;
         "刷新消息")
-            echo 0 > $COUNTING
+            times_down_to_zero
             show_chat_room
         ;;
         "返回主页")
@@ -183,7 +190,7 @@ send_a_message() {
             RETURN=$(curl -s -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
             echo "25"
             echo "# 正在记录日志……"
-            echo 0 > $COUNTING
+            times_down_to_zero
             echo "已发送消息：$RETURN"
             echo "100"
         ) |
