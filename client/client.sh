@@ -74,7 +74,7 @@ load_settings
 
 # 显示主页
 show_home() {
-    RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" "进入房间" "更新昵称和房间号" "设置" "退出")
+    RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" \ "进入房间" "更新昵称和房间号" "设置" "退出")
 
     case $? in
          0)
@@ -97,11 +97,13 @@ show_home() {
                     show_home
                 ;;
             esac
-            ;;
+        ;;
          1)
-            exit 0;;
+            exit 0
+        ;;
         -1)
-            zenity --error --text="发生意外错误。";;
+            zenity --error --text="发生意外错误。"
+        ;;
     esac
 }
 
@@ -120,11 +122,13 @@ edit_info() {
             times_down_to_zero
             save_settings
             show_home
-            ;;
+        ;;
          1)
-            show_home;;
+            show_home
+        ;;
         -1)
-            zenity --error --text="发生意外错误。";;
+            zenity --error --text="发生意外错误。"
+        ;;
     esac
 }
 
@@ -151,9 +155,11 @@ show_chat_room() {
         zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
         case $? in
             1)
-                show_home;;
+                show_home
+            ;;
             -1)
-                zenity --error --text="发生意外错误。";;
+                zenity --error --text="发生意外错误。"
+            ;;
         esac
     else
         echo "从缓存读取聊天记录……"
@@ -177,7 +183,7 @@ show_chat_room() {
         TIMEOUT=60
     fi
     ((TIMEOUT+=4))
-    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="可选操作和聊天记录：" --column="选项和消息" "发送消息" "返回主页" "$CHAT_LOG")
+    CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="可选操作和聊天记录：" --column="选项和消息" \ "发送消息" "返回主页" "$CHAT_LOG")
 
     case $? in
          0)
@@ -191,13 +197,17 @@ show_chat_room() {
                 *)
                     show_chat_room
                 ;;
-            esac;;
+            esac
+        ;;
          1)
-            show_home;;
+            show_home
+        ;;
          5)
-            show_chat_room;;
+            show_chat_room
+        ;;
         -1)
-            zenity --error --text="发生意外错误。";;
+            zenity --error --text="发生意外错误。"
+        ;;
     esac
 }
 
@@ -236,11 +246,13 @@ send_a_message() {
                 # 返回聊天室
                 show_chat_room
             fi
-            ;;
+        ;;
          1)
-            show_chat_room;;
+            show_chat_room
+        ;;
         -1)
-            zenity --error --text="发生意外错误。";;
+            zenity --error --text="发生意外错误。"
+        ;;
     esac
 }
 
@@ -257,11 +269,13 @@ show_settings() {
             printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
             save_settings
             show_home
-            ;;
+        ;;
          1)
-            show_home;;
+            show_home
+        ;;
         -1)
-            zenity --error --text="发生意外错误。";;
+            zenity --error --text="发生意外错误。"
+        ;;
     esac
 }
 
