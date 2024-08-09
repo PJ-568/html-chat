@@ -92,7 +92,7 @@ load_settings() {
     fi
 }
 
-# zenity 实现
+# zenity 模式
 
 ## 显示主页
 show_home() {
@@ -301,7 +301,7 @@ show_settings() {
     esac
 }
 
-# dialog 实现
+# dialog 模式
 
 ## 显示主页 - dialog
 show_home-dialog() {
@@ -474,12 +474,41 @@ show_chat_room-dialog() {
     fi
 }
 
+# cli 模式
+
+## 显示主页 - cli
+show_home-cli() {
+    while true; do
+        echo "==聊天室=="
+        printf "- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n请选择操作："
+        echo "1. 进入房间"
+        echo "2. 更新昵称和房间号"
+        echo "3. 设置"
+        echo "4. 退出"
+
+        read choice
+
+        if [ "$choice" -eq 1 ]; then
+            show_chat_room
+        elif [ "$choice" -eq 2 ]; then
+            edit_info
+        elif [ "$choice" -eq 3 ]; then
+            show_settings
+        elif [ "$choice" -eq 4 ]; then
+            save_settings
+            break
+        else
+            echo "选择无效，请重新选择："
+        fi
+    done
+}
+
 # 主程序入口
 load_settings
 if [ "$ZENITY_AVAL" = "true" ]; then
     show_home
 elif [ "$DIALOG_AVAL" = "true" ]; then
     show_home-dialog
-# else
-#     show_home-cli
+else
+    show_home-cli
 fi
