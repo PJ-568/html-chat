@@ -3,9 +3,26 @@
 ZENITY_AVAL="true"
 DIALOG_AVAL="true"
 
+for i in "$*"; do
+    if [ "$i" = "--zenity" ]; then
+        ZENITY_AVAL="true"
+        DIALOG_AVAL="false"
+    elif [ "$i" = "--dialog" ]; then
+        ZENITY_AVAL="false"
+        DIALOG_AVAL="true"
+    elif [ "$i" = "--cli" ]; then
+        ZENITY_AVAL="false"
+        DIALOG_AVAL="false"
+    fi
+done
+
 # 检查依赖
-zenity --version > /dev/null 2>&1 || { echo >&2 "安装 zenity 以获得更佳体验。"; ZENITY_AVAL="false"; }
-dialog --version > /dev/null 2>&1 || { echo >&2 "安装 dialog 以获得更佳体验。"; DIALOG_AVAL="false"; }
+if [ "$ZENITY_AVAL" = "true" ]; then
+    zenity --version > /dev/null 2>&1 || { echo >&2 "安装 zenity 以获得更佳体验。"; ZENITY_AVAL="false"; }
+fi
+if [ "$DIALOG_AVAL" = "true" ]; then
+    dialog --version > /dev/null 2>&1 || { echo >&2 "安装 dialog 以获得更佳体验。"; DIALOG_AVAL="false"; }
+fi
 curl --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 curl 以继续使用。"; exit 1; }
 mkdir --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mkdir 以继续使用。"; exit 1; }
 sed --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 sed 以继续使用。"; exit 1; }
@@ -459,8 +476,10 @@ show_chat_room-dialog() {
 
 # 主程序入口
 load_settings
-if [ "$ZENITY_AVAL" == "true" ]; then
+if [ "$ZENITY_AVAL" = "true" ]; then
     show_home
-elif [ "$DIALOG_AVAL" == "true" ]; then
+elif [ "$DIALOG_AVAL" = "true" ]; then
     show_home-dialog
+# else
+#     show_home-cli
 fi
