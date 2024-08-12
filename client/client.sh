@@ -43,6 +43,11 @@ H_SHOW_ROOM="$(recho "房间号：" "Room ID: ")"
 H_ENTER_ROOM="$(recho "进入房间" "Enter Chat Room")"
 H_UPD_INFO="$(recho "更新昵称和房间号" "Update Nickname and Room ID")"
 
+### 更新档案
+
+U_TITLE="$(recho "更新信息" "Update Info")"
+U_TIC="$(recho "请输入新的信息，留空则维持原样。" "Please enter new info, leave blank to keep the original one.")
+
 ZENITY_AVAL="true"
 DIALOG_AVAL="true"
 
@@ -199,8 +204,8 @@ show_home() {
 
 ## 更新昵称和房间号
 edit_info() {
-    UPD_I_TITLE="$(recho "$SOFTWARE_NAME - 更新信息" "$SOFTWARE_NAME - Update Info")"
-    UPD_I_TEXT="$(recho "请输入新的昵称和房间号，留空则维持原样。" "Please enter your new nickname and room ID, leave blank to keep the original.")"
+    UPD_I_TITLE="$SOFTWARE_NAME - $U_TITLE"
+    UPD_I_TEXT="$U_TIC"
     UPD_I_NICKNAME="$(recho "昵称（$NICKNAME）：" "Nickname ($NICKNAME): ")"
     UPD_I_ROOM_ID="$(recho "房间号（$ROOM_ID）：" "Room ID ($ROOM_ID): ")"
 
