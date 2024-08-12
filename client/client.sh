@@ -5,19 +5,21 @@ DIALOG_AVAL="true"
 VERSION="0.1.0"
 
 for i in "$*"; do
-    if [ "$i" = "--zenity" ]; then
+    if [ "$i" = "--zenity" -o "$i" = "-z" ]; then
         ZENITY_AVAL="true"
         DIALOG_AVAL="false"
-    elif [ "$i" = "--dialog" ]; then
+    elif [ "$i" = "--dialog" -o "$i" = "-d" ]; then
         ZENITY_AVAL="false"
         DIALOG_AVAL="true"
-    elif [ "$i" = "--cli" ]; then
+    elif [ "$i" = "--cli" -o "$i" = "-c" ]; then
         ZENITY_AVAL="false"
         DIALOG_AVAL="false"
-    elif [ "$i" = "--version" ]; then
-        printf "聊天室客户端 v$VERSION\n"
-    elif [ "$i" = "--help" ]; then
-        printf "聊天室客户端\n--zenity     使用 zenity 作为 UI\n--dialog     使用 dialog 作为 UI\n--cli        使用命令行作为 UI\n--version    显示版本信息\n"
+    elif [ "$i" = "--version" -o "$i" = "-v" ]; then
+        echo "$0 v$VERSION"
+        exit 0
+    elif [ "$i" = "--help" -o "$i" = "-h" ]; then
+        printf "$0 v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n"
+        exit 0
     fi
 done
 
@@ -222,7 +224,7 @@ show_chat_room() {
             return 1
         else
             times_down
-            printf "聊天记录：\n$CHAT_LOG\n"
+            echo "已获取聊天记录。"
         fi
 
         ### 显示聊天记录
