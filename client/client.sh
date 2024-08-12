@@ -285,6 +285,15 @@ send_a_message() {
                         echo "100"
                     ) |
                     zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=5 --auto-close
+                    case $? in
+                        1)
+                            return 0
+                        ;;
+                        -1)
+                            zenity --error --text="发生意外错误。"
+                            return 2
+                        ;;
+                    esac
                 fi
 
                 ### 判断发送是否成功
@@ -295,14 +304,15 @@ send_a_message() {
                     continue
                 else
                     ### 返回聊天室
-                    exit 0
+                    return 0
                 fi
             ;;
             1)
-                exit 0
+                return 0
             ;;
             -1)
                 zenity --error --text="发生意外错误。"
+                return 1
             ;;
         esac
     done
@@ -320,14 +330,14 @@ show_settings() {
             SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
             printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
             save_settings
-            exit 0
+            return 0
         ;;
          1)
-            exit 0
+            return 0
         ;;
         -1)
             zenity --error --text="发生意外错误。"
-            exit 1
+            return 1
         ;;
     esac
 }
@@ -414,14 +424,14 @@ edit_info-dialog() {
             ### 保存设置并返回主页
             times_down_to_zero
             save_settings
-            exit 0
+            return 0
         elif [ $exit_status -eq 1 ]; then
             ### 用户点击了取消按钮
-            exit 0
+            return 0
         else
             ### 发生了错误
             dialog --error "发生意外错误。"
-            exit 1
+            return 1
         fi
     done
 }
