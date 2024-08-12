@@ -478,14 +478,14 @@ edit_info-dialog() {
 
         ### 创建输入字段
         NEW_NICKNAME=$(dialog --backtitle "$DIALOG_TITLE" \
-            --title "$U_TITLE - $H_SHOW_NICKNAME$U_TIC" \
-            --inputbox "$[$NICKNAME]$H_SHOW_NICKNAME" 8 60 3>&1 1>&2 2>&3)
+            --title "$U_TITLE - $H_SHOW_NICKNAME" \
+            --inputbox "$U_TIC\n[$NICKNAME]$H_SHOW_NICKNAME" 8 60 3>&1 1>&2 2>&3)
         exit_status=$?
 
         if [ $exit_status -eq 0 ]; then
             NEW_ROOM_ID=$(dialog --backtitle "$DIALOG_TITLE" \
-                --title "$U_TITLE - $H_SHOW_ROOM$U_TIC" \
-                --inputbox "[$ROOM_ID]$H_SHOW_ROOM" 8 60 3>&1 1>&2 2>&3)
+                --title "$U_TITLE - $H_SHOW_ROOM" \
+                --inputbox "$U_TIC\n[$ROOM_ID]$H_SHOW_ROOM" 8 60 3>&1 1>&2 2>&3)
             exit_status=$?
         fi
 
