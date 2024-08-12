@@ -1,9 +1,12 @@
 #!/bin/bash
 
-# 语言判断
+# 语言相关
+
+## 语言检测
 CURRENT_LANG=0
 if [ $(echo ${LANG/_/-} | grep -Ei "\\b(zh|cn)\\b") ]; then CURRENT_LANG=1; fi
 
+## 本地化
 recho() {
     if [ $CURRENT_LANG == 1 ]; then
         echo $1;
@@ -12,9 +15,33 @@ recho() {
     fi
 }
 
-# 基本信息
+## 文本初始化
+
+### 公共
+
+#### 基本信息
+
 SOFTWARE_NAME="$(recho "聊天室" "HTML-Chat")"
 VERSION="0.1.0"
+
+#### 提示
+
+P_SELECT="$(recho "请选择操作。" "Please select an option.")"
+P_OPTIN="$(recho "选项" "Options")"
+P_SETTINGS="$(recho "设置" "Settings")"
+P_EXIT="$(recho "退出" "Exit")"
+
+#### 错误提示
+
+E_TEXT="$(recho "发生意外错误。" "An unexpected error has occurred.")"
+E_EXIT="$(recho "发生意外错误。软件即将退出。" "An unexpected error has occurred. The software will exit.")"
+
+### 主页
+
+H_SHOW_NICKNAME="$(recho "昵称：" "Nickname: ")"
+H_SHOW_ROOM="$(recho "房间号：" "Room ID: ")"
+H_ENTER_ROOM="$(recho "进入房间" "Enter Chat Room")"
+H_UPD_INFO="$(recho "更新昵称和房间号" "Update Nickname and Room ID")"
 
 ZENITY_AVAL="true"
 DIALOG_AVAL="true"
@@ -132,34 +159,29 @@ load_settings() {
 
 ## 显示主页
 show_home() {
-    HOME_TEXT="$(recho "昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" "Nickname: $NICKNAME\nRoom ID: $ROOM_ID\nPlease select an option.")"
-    HOME_OPTIONS_TITLE="$(recho "选项" "Options")"
-    HOME_OPTIONS_SHOW_ROOM="$(recho "进入房间" "Enter Chat Room")"
-    HOME_OPTIONS_UPD_INFO="$(recho "更新昵称和房间号" "Update Nickname and Room ID")"
-    HOME_OPTIONS_SETTINGS="$(recho "设置" "Settings")"
-    HOME_OPTIONS_EXIT="$(recho "退出" "Exit")"
+    HOME_TEXT="$H_SHOW_NICKNAME $NICKNAME\n$H_SHOW_ROOM $ROOM_ID\n$P_SELECT"
 
     while true; do
-        RESPONSE=$(zenity --list --title="$SOFTWARE_NAME" --width=400 --height=400 --text="$HOME_TEXT" --column="$HOME_OPTIONS_TITLE" "$HOME_OPTIONS_SHOW_ROOM" "$HOME_OPTIONS_UPD_INFO" "$HOME_OPTIONS_SETTINGS" "$HOME_OPTIONS_EXIT")
+        RESPONSE=$(zenity --list --title="$SOFTWARE_NAME" --width=400 --height=400 --text="$HOME_TEXT" --column="$P_OPTIN" "$H_ENTER_ROOM" "$H_UPD_INFO" "$P_SETTINGS" "$P_EXIT")
 
         case $? in
             0)
                 case $RESPONSE in
-                    "$HOME_OPTIONS_SHOW_ROOM")
+                    "$H_ENTER_ROOM")
                         show_chat_room
                     ;;
-                    "$HOME_OPTIONS_UPD_INFO")
+                    "$H_UPD_INFO")
                         edit_info
                     ;;
-                    "$HOME_OPTIONS_SETTINGS")
+                    "$P_SETTINGS")
                         show_settings
                     ;;
-                    "$HOME_OPTIONS_EXIT")
+                    "$P_EXIT")
                         save_settings
                         exit 0
                     ;;
                     *)
-                        zenity --info --text="$(recho "请选择一个选项。" "Please select an option.")"
+                        zenity --info --text="$P_SELECT"
                         continue
                     ;;
                 esac
@@ -168,7 +190,7 @@ show_home() {
                 exit 0
             ;;
             -1)
-                zenity --error --text="$(recho "发生意外错误。软件即将退出。" "An unexpected error has occurred. The software will exit.")"
+                zenity --error --text="$E_EXIT"
                 exit 1
             ;;
         esac
@@ -191,7 +213,7 @@ edit_info() {
 
             NICKNAME=${ADDR[0]:-"$NICKNAME"}
             ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
-            printf "$(recho "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n" "Updated:\n- Nickname: $NICKNAME\n- Room ID: $ROOM_ID\n")"
+            printf "$(recho "已更新昵称和房间号：\n  昵称：$NICKNAME\n  房间号：$ROOM_ID\n" "Updated:\n  Nickname: $NICKNAME\n  Room ID: $ROOM_ID\n")"
             times_down_to_zero
             save_settings
             return 0
@@ -297,7 +319,7 @@ show_chat_room() {
 ## 发送消息
 send_a_message() {
     while true; do
-        MESSAGE=$(zenity --entry --title="$SOFTWARE_NAME - $ROOM_ID - $(recho "发送消息" "Send messages")" --text="$NICKNAME $(recho "说：" "saids: ")")
+        MESSAGE=$(zenity --entry --title="$SOFTWARE_NAME - $ROOM_ID - $(recho "发送消息" "Send messages")" --text="$NICKNAME $(recho "说：" "says: ")")
 
         case $? in
             0)
@@ -361,7 +383,7 @@ show_settings() {
             read -ra ADDR <<< "$RESPONSE"
 
             SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
-            printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+            printf "已修改设置：\n  服务器地址和端口：$SERVER_ADDRESS\n"
             save_settings
             return 0
         ;;
@@ -445,7 +467,7 @@ edit_info-dialog() {
             ROOM_ID=${NEW_ROOM_ID:-"$ROOM_ID"}
 
             ### 显示更新的信息
-            dialog --msgbox "$(recho "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n" "Updated:\n- Nickname: $NICKNAME\n- Room ID: $ROOM_ID\n")" 10 60
+            dialog --msgbox "$(recho "已更新昵称和房间号：\n  昵称：$NICKNAME\n  房间号：$ROOM_ID\n" "Updated:\n  Nickname: $NICKNAME\n  Room ID: $ROOM_ID\n")" 10 60
 
             ### 保存设置并返回主页
             times_down_to_zero
@@ -514,20 +536,20 @@ show_chat_room-dialog() {
 
 ## 发送消息 - dialog
 send_a_message-dialog() {
-    message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - 发送" \
-        --inputbox "请输入您要发送的信息：" 10 60 \
+    message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - $(recho "发送消息" "Send message")" \
+        --inputbox "$NICKNAME $(recho "说：" "says: ")" 10 60 \
         2>&1 >/dev/tty)
 
     if [ $? -eq 0 -o ! -z "$message" ]; then
-        echo "开始发送信息……"
+        recho "开始发送信息……" "Sending message..."
         RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
-        echo "正在处理信息……"
+        recho "正在处理信息……" "Processing message..."
         times_down_to_zero
         
         if [ "$RETURN" == "302" ]; then
-            echo "已发送消息。"
+            recho "已发送消息。" "Message sent."
         else
-            dialog --backtitle "$RETURN" --title "错误" --msgbox "消息发送失败：\n- 错误代码：$RETURN\n" 0 0
+            dialog --backtitle "$RETURN" --title "$(recho "错误" "Error")" --msgbox "$(recho "消息发送失败：\n  错误代码：$RETURN" "Failed to send message:\n  Error code: $RETURN")" 0 0
             return $RETURN
         fi
     fi
@@ -539,7 +561,7 @@ send_a_message-dialog() {
 ## 显示主页 - cli
 show_home-cli() {
     while true; do
-        printf "\n==聊天室==\n"
+        printf "\n==$SOFTWARE_NAME==\n"
         printf "昵称：$NICKNAME\n房间号：$ROOM_ID\n"
         echo "1. 进入房间"
         echo "2. 更新昵称和房间号"
@@ -568,7 +590,7 @@ show_home-cli() {
 edit_info-cli() {
     ### 是否有更新内容
     is_updated=0
-    printf "\n==聊天室 - 更新信息==\n"
+    printf "\n==$SOFTWARE_NAME - 更新信息==\n"
     printf "当前昵称：$NICKNAME\n请输入新的昵称，留空则维持原样。\n新昵称："
 
     read choice0
@@ -578,7 +600,7 @@ edit_info-cli() {
         is_updated=1
     fi
 
-    printf "\n==聊天室 - 更新信息==\n"
+    printf "\n==$SOFTWARE_NAME - 更新信息==\n"
     printf "当前房间号：$ROOM_ID\n请输入新的房间号，留空则维持原样。\n新房间号："
 
     read choice1
@@ -589,7 +611,7 @@ edit_info-cli() {
     fi
 
     if [ $is_updated -eq 1 ]; then
-        printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+        printf "已更新昵称和房间号：\n  昵称：$NICKNAME\n  房间号：$ROOM_ID\n"
         times_down_to_zero
         save_settings
     fi
@@ -620,7 +642,7 @@ show_chat_room-cli() {
         times_down
 
         ### 显示聊天记录
-        printf "\n==聊天室 - $ROOM_ID==\n"
+        printf "\n==$SOFTWARE_NAME - $ROOM_ID==\n"
         printf "$CHAT_LOG\n"
         echo "1. 发送消息"
         echo "2. 刷新消息"
@@ -643,7 +665,7 @@ show_chat_room-cli() {
 
 ## 发送消息 - cli
 send_a_message-cli() {
-    printf "\n==聊天室 - $ROOM_ID - 发送==\n"
+    printf "\n==$SOFTWARE_NAME - $ROOM_ID - 发送==\n"
     echo "留空以返回。"
     printf "$NICKNAME 说："
 
@@ -657,7 +679,7 @@ send_a_message-cli() {
         if [ "$RETURN" == "302" ]; then
             echo "已发送消息。"
         else
-            printf "消息发送失败：\n- 错误代码：$RETURN\n"
+            printf "消息发送失败：\n  错误代码：$RETURN\n"
             return $RETURN
         fi
     fi
@@ -666,7 +688,7 @@ send_a_message-cli() {
 
 ## 设置 - cli
 show_settings-cli() {
-    printf "\n==聊天室 - 设置==\n"
+    printf "\n==$SOFTWARE_NAME - 设置==\n"
     printf "服务器地址和端口：$SERVER_ADDRESS\n请输入新的服务器地址和端口，留空则恢复默认。\n新服务器地址和端口："
 
     read choice0
@@ -677,7 +699,7 @@ show_settings-cli() {
         SERVER_ADDRESS="https://chat.serv.pj568.sbs"
     fi
 
-    printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+    printf "已修改设置：\n  服务器地址和端口：$SERVER_ADDRESS\n"
     save_settings
     return 0
 }
