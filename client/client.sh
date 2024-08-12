@@ -361,7 +361,7 @@ show_home-dialog() {
         )
 
         ### 使用 dialog 创建选择列表
-        CHOICE=$(dialog --backtitle "聊天室" \
+        CHOICE=$(dialog --no-cancel --backtitle "聊天室" \
             --title "聊天室" \
             --menu "$DIALOG_CONTENT" 15 60 4 \
             "${OPTIONS[@]}" 2>&1 >/dev/tty)
@@ -375,7 +375,7 @@ show_home-dialog() {
                 edit_info-dialog
             ;;
             "3")
-                show_settings
+                show_settings-cli
             ;;
             "4")
                 save_settings
@@ -454,7 +454,7 @@ show_chat_room-dialog() {
         times_down
 
         ### 用户选择
-        code=$(dialog --title "聊天室 - $ROOM_ID" \
+        code=$(dialog --no-cancel --clear --title "聊天室 - $ROOM_ID" \
             --menu "$(
                 echo "$CHAT_LOG"
                 echo
@@ -483,7 +483,7 @@ show_chat_room-dialog() {
 
 ## 发送消息 - dialog
 send_a_message-dialog() {
-    message=$(dialog --title "聊天室 - $ROOM_ID - 发送" \
+    message=$(dialog --clear --title "聊天室 - $ROOM_ID - 发送" \
         --inputbox "请输入您要发送的信息：" 10 60 \
         2>&1 >/dev/tty)
 
