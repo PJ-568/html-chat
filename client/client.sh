@@ -1,24 +1,39 @@
 #!/bin/bash
 
-ZENITY_AVAL="true"
-DIALOG_AVAL="true"
+# 语言判断
+CURRENT_LANG=0
+if [ $(echo ${LANG/_/-} | grep -Ei "\\b(zh|cn)\\b") ]; then CURRENT_LANG=1; fi
+
+recho() {
+    if [ $CURRENT_LANG == 1 ]; then
+        echo $1;
+    else
+        echo $2;
+    fi
+}
+
+# 基本信息
+SOFTWARE_NAME="$(recho "聊天室" "HTML-Chat")"
 VERSION="0.1.0"
 
+ZENITY_AVAL="true"
+DIALOG_AVAL="true"
+
 for i in "$*"; do
-    if [ "$i" = "--zenity" -o "$i" = "-z" ]; then
+    if [ "$i" == "--zenity" -o "$i" == "-z" ]; then
         ZENITY_AVAL="true"
         DIALOG_AVAL="false"
-    elif [ "$i" = "--dialog" -o "$i" = "-d" ]; then
+    elif [ "$i" == "--dialog" -o "$i" == "-d" ]; then
         ZENITY_AVAL="false"
         DIALOG_AVAL="true"
-    elif [ "$i" = "--cli" -o "$i" = "-c" ]; then
+    elif [ "$i" == "--cli" -o "$i" == "-c" ]; then
         ZENITY_AVAL="false"
         DIALOG_AVAL="false"
-    elif [ "$i" = "--version" -o "$i" = "-v" ]; then
+    elif [ "$i" == "--version" -o "$i" == "-v" ]; then
         echo "$0 v$VERSION"
         exit 0
-    elif [ "$i" = "--help" -o "$i" = "-h" ]; then
-        printf "$0 v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n"
+    elif [ "$i" == "--help" -o "$i" == "-h" ]; then
+        printf "$(recho "$0 v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n" "$0 v$VERSION\n-z --zenity\tuse zenity as UI\n-d --dialog\tuse dialog as UI\n-c --cli\tuse command line as UI\n-v --version\tshow version information\n-h --help\tshow help information\n")"
         exit 0
     fi
 done
@@ -26,23 +41,23 @@ done
 # 依赖缺失提醒
 inform_dependency() {
     for i in "$*"; do
-        if [ "$ZENITY_AVAL" = "true" ]; then
-            zenity --warning --text="请先安装 $i 以继续使用。"
-        elif [ "$DIALOG_AVAL" = "true" ]; then
-            dialog --msgbox "安装 zenity 以获得更佳体验。\n请先安装 $i 以继续使用。" 8 30
+        if [ "$ZENITY_AVAL" == "true" ]; then
+            zenity --warning --text="$(recho "请先安装 $i 以继续使用。" "Please install $i first to continue.")"
+        elif [ "$DIALOG_AVAL" == "true" ]; then
+            dialog --msgbox "$(recho "安装 zenity 以获得更佳体验。\n请先安装 $i 以继续使用。" "Install zenity for better experience.\nPlease install $i first to continue.")" 0 0
         else
-            echo >&2 "安装 zenity 或 dialog 以获得更佳体验。\n请先安装 $i 以继续使用。";
+            printf >&2 "$(recho "安装 zenity 或 dialog 以获得更佳体验。\n请先安装 $i 以继续使用。" "Install zenity or dialog for better experience.\nPlease install $i first to continue.")\n";
         fi
     done
     exit 1
 }
 
 # 检查依赖
-if [ "$ZENITY_AVAL" = "true" ]; then
-    zenity --version > /dev/null 2>&1 || { echo >&2 "安装 zenity 以获得更佳体验。"; ZENITY_AVAL="false"; }
+if [ "$ZENITY_AVAL" == "true" ]; then
+    zenity --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 zenity 以获得更佳体验。" "Install zenity for better experience.")\n"; ZENITY_AVAL="false"; }
 fi
-if [ "$DIALOG_AVAL" = "true" ]; then
-    dialog --version > /dev/null 2>&1 || { echo >&2 "安装 dialog 以获得更佳体验。"; DIALOG_AVAL="false"; }
+if [ "$DIALOG_AVAL" == "true" ]; then
+    dialog --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 dialog 以获得更佳体验。" "Install dialog for better experience.")\n"; DIALOG_AVAL="false"; }
 fi
 curl --version > /dev/null 2>&1 || { inform_dependency "curl"; }
 mkdir --version > /dev/null 2>&1 || { inform_dependency "mkdir"; }
@@ -94,7 +109,7 @@ times_down() {
 
 ## 保存设置
 save_settings() {
-    echo "保存设置。"
+    recho "保存设置。" "Saving settings."
     echo "# 昵称 房间号 服务器地址" > "$SETTINGS_FILE"
     echo "$NICKNAME" >> "$SETTINGS_FILE"
     echo "$ROOM_ID" >> "$SETTINGS_FILE"
@@ -117,28 +132,35 @@ load_settings() {
 
 ## 显示主页
 show_home() {
+    HOME_TEXT="$(recho "昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" "Nickname: $NICKNAME\nRoom ID: $ROOM_ID\nPlease select an option.")"
+    HOME_OPTIONS_TITLE="$(recho "选项" "Options")"
+    HOME_OPTIONS_SHOW_ROOM="$(recho "进入房间" "Enter Chat Room")"
+    HOME_OPTIONS_UPD_INFO="$(recho "更新昵称和房间号" "Update Nickname and Room ID")"
+    HOME_OPTIONS_SETTINGS="$(recho "设置" "Settings")"
+    HOME_OPTIONS_EXIT="$(recho "退出" "Exit")"
+
     while true; do
-        RESPONSE=$(zenity --list --title="聊天室" --width=400 --height=400 --text="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" --column="选项" "进入房间" "更新昵称和房间号" "设置" "退出")
+        RESPONSE=$(zenity --list --title="$SOFTWARE_NAME" --width=400 --height=400 --text="$HOME_TEXT" --column="$HOME_OPTIONS_TITLE" "$HOME_OPTIONS_SHOW_ROOM" "$HOME_OPTIONS_UPD_INFO" "$HOME_OPTIONS_SETTINGS" "$HOME_OPTIONS_EXIT")
 
         case $? in
             0)
                 case $RESPONSE in
-                    "进入房间")
+                    "$HOME_OPTIONS_SHOW_ROOM")
                         show_chat_room
                     ;;
-                    "更新昵称和房间号")
+                    "$HOME_OPTIONS_UPD_INFO")
                         edit_info
                     ;;
-                    "设置")
+                    "$HOME_OPTIONS_SETTINGS")
                         show_settings
                     ;;
-                    "退出")
+                    "$HOME_OPTIONS_EXIT")
                         save_settings
                         exit 0
                     ;;
                     *)
-                        zenity --info --text="请选择一个选项。"
-                        show_home
+                        zenity --info --text="$(recho "请选择一个选项。" "Please select an option.")"
+                        continue
                     ;;
                 esac
             ;;
@@ -146,7 +168,7 @@ show_home() {
                 exit 0
             ;;
             -1)
-                zenity --error --text="发生意外错误。软件即将退出。"
+                zenity --error --text="$(recho "发生意外错误。软件即将退出。" "An unexpected error has occurred. The software will exit.")"
                 exit 1
             ;;
         esac
@@ -155,7 +177,12 @@ show_home() {
 
 ## 更新昵称和房间号
 edit_info() {
-    RESPONSE=$(zenity --forms --title="聊天室 - 更新信息" --text="更新昵称和房间号，留空则维持原样" --separator="|" --add-entry="昵称（$NICKNAME）：" --add-entry="房间号（$ROOM_ID）：")
+    UPD_I_TITLE="$(recho "$SOFTWARE_NAME - 更新信息" "$SOFTWARE_NAME - Update Info")"
+    UPD_I_TEXT="$(recho "请输入新的昵称和房间号，留空则维持原样。" "Please enter your new nickname and room ID, leave blank to keep the original.")"
+    UPD_I_NICKNAME="$(recho "昵称（$NICKNAME）：" "Nickname ($NICKNAME): ")"
+    UPD_I_ROOM_ID="$(recho "房间号（$ROOM_ID）：" "Room ID ($ROOM_ID): ")"
+
+    RESPONSE=$(zenity --forms --title="$UPD_I_TITLE" --text="$UPD_I_TEXT" --separator="|" --add-entry="$UPD_I_NICKNAME" --add-entry="$UPD_I_ROOM_ID")
 
     case $? in
          0)
@@ -164,7 +191,7 @@ edit_info() {
 
             NICKNAME=${ADDR[0]:-"$NICKNAME"}
             ROOM_ID=${ADDR[1]:-"$ROOM_ID"}
-            printf "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n"
+            printf "$(recho "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n" "Updated:\n- Nickname: $NICKNAME\n- Room ID: $ROOM_ID\n")"
             times_down_to_zero
             save_settings
             return 0
@@ -173,7 +200,7 @@ edit_info() {
             return 0
         ;;
         -1)
-            zenity --error --text="发生意外错误。"
+            zenity --error --text="$(recho "发生意外错误。" "An error has occurred.")"
             return 1
         ;;
     esac
@@ -188,60 +215,64 @@ show_chat_room() {
             (
                 RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
                 echo "60"
-                echo "已请求聊天记录信息：$RESPONSE"
-                echo "70"
-                echo "# 正在格式化信息……"
+                recho "# 正在格式化信息……" "# Formatting information..."
                 if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
                     echo "85"
                     export CHAT_LOG="${BASH_REMATCH[1]}"
                     echo "90"
                     export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
                 fi
-                echo "# 正在记录日志……"
+                recho "# 正在记录日志……" "# Logging..."
                 echo "$CHAT_LOG" > "$TEMP_FILE"
                 echo "100"
             ) |
-            zenity --progress --title="进入聊天室 - $ROOM_ID" --text="正在获取聊天记录……" --percentage=30 --auto-close
+            zenity --progress --title="$(recho "进入聊天室" "Loading Chat Room") - $ROOM_ID" --text="$(recho "正在获取聊天记录……" "Loading chat history..")" --percentage=30 --auto-close
             case $? in
                 1)
                     return 0
                 ;;
                 -1)
-                    zenity --error --text="发生意外错误。"
+                    zenity --error --text="$(recho "发生意外错误。" "An error has occurred.")"
                     return 2
                 ;;
             esac
         else
-            echo "从缓存读取聊天记录……"
+            recho "从缓存读取聊天记录……" "Reading from cache..."
         fi
         CHAT_LOG=$(cat "$TEMP_FILE")
 
         ### 判断聊天记录是否正常获取
         if [ -z "$CHAT_LOG" ]; then
-            printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
-            zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"
+            recho "无法获取聊天记录！" "Failed to load chat history!"
+            recho "请检查网络链接和服务器地址设置。" "Please check your network connection and server address settings."
+            zenity --error --text="$(recho "无法获取聊天记录！\n请检查网络链接和服务器地址设置。" "Failed to load chat history!\nPlease check your network connection and server address settings.")"
             times_down_to_zero
             return 1
         else
             times_down
-            echo "已获取聊天记录。"
+            recho "已获取聊天记录。" "Chat history loaded."
         fi
 
         ### 显示聊天记录
+        CR_TEXT="$(recho "可选操作和聊天记录：" "Optional operations and chat history:")"
+        CR_OPRIONS_AND_MSG="$(recho "选项和消息" "Options and Messages")"
+        CR_SEND_MSG="$(recho "发送消息" "Send Message")"
+        CR_BACK="$(recho "返回主页" "Back")"
+
         TIMEOUT=$(($(cat $COUNTING)))
         if [ $TIMEOUT -eq 0 ]; then
             TIMEOUT=60
         fi
         ((TIMEOUT+=4))
-        CHOICE=$(zenity --list --title="聊天室 - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="可选操作和聊天记录：" --column="选项和消息" "发送消息" "返回主页" "$CHAT_LOG")
+        CHOICE=$(zenity --list --title="$SOFTWARE_NAME - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="$CR_TEXT" --column="$CR_OPRIONS_AND_MSG" "$CR_SEND_MSG" "$CR_BACK" "$CHAT_LOG")
 
         case $? in
             0)
                 case $CHOICE in
-                    "发送消息")
+                    "$CR_SEND_MSG")
                         send_a_message
                     ;;
-                    "返回主页")
+                    "$CR_BACK")
                         return 0
                     ;;
                     *)
@@ -256,7 +287,7 @@ show_chat_room() {
                 continue
             ;;
             -1)
-                zenity --error --text="发生意外错误。"
+                zenity --error --text="$(recho "发生意外错误。" "An error has occurred.")"
                 return 3
             ;;
         esac
@@ -266,7 +297,7 @@ show_chat_room() {
 ## 发送消息
 send_a_message() {
     while true; do
-        MESSAGE=$(zenity --entry --title="聊天室 - $ROOM_ID - 发送消息" --text="$NICKNAME 说:")
+        MESSAGE=$(zenity --entry --title="$SOFTWARE_NAME - $ROOM_ID - $(recho "发送消息" "Send messages")" --text="$NICKNAME $(recho "说：" "saids: ")")
 
         case $? in
             0)
@@ -274,25 +305,24 @@ send_a_message() {
                     (
                         RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
                         echo "15"
-                        echo "# 正在处理信息……"
+                        recho "# 正在处理信息……" "# Processing..."
                         times_down_to_zero
                         echo "25"
                         
-                        if [ "$RETURN" = "302" ]; then
+                        if [ "$RETURN" == "302" ]; then
                             echo "" > "$TEMP_FILE"
                         else
                             echo "$RETURN" > "$TEMP_FILE"
                         fi
-                        echo "已发送消息：$RETURN"
                         echo "100"
                     ) |
-                    zenity --progress --title="聊天室 - $ROOM_ID - 发送消息中" --text="正在发送消息……" --percentage=5 --auto-close
+                    zenity --progress --title="$SOFTWARE_NAME - $ROOM_ID - $(recho "发送消息中" "Sending messages")" --text="$(recho "正在发送消息……" "Sending messages...")" --percentage=5 --auto-close
                     case $? in
                         1)
                             return 0
                         ;;
                         -1)
-                            zenity --error --text="发生意外错误。"
+                            zenity --error --text="$(recho "发生意外错误。" "An error has occurred.")"
                             return 2
                         ;;
                     esac
@@ -301,8 +331,9 @@ send_a_message() {
                 ### 判断发送是否成功
                 ERR_CODE=$(cat "$TEMP_FILE")
                 if [ ! -z "$ERR_CODE" ]; then
-                    printf "消息发送失败：\n- 错误代码：$ERR_CODE\n"
-                    zenity --error --text="消息发送失败：\n错误代码：$ERR_CODE"
+                    recho "消息发送失败：" "Message sending failed:"
+                    recho "  错误代码：$ERR_CODE" "  Error code: $ERR_CODE"
+                    zenity --error --text="$(recho "消息发送失败：\n错误代码：$ERR_CODE" "Message sending failed:\nError code: $ERR_CODE")"
                     continue
                 else
                     ### 返回聊天室
@@ -313,7 +344,7 @@ send_a_message() {
                 return 0
             ;;
             -1)
-                zenity --error --text="发生意外错误。"
+                zenity --error --text="$(recho "发生意外错误。" "An error has occurred.")"
                 return 1
             ;;
         esac
@@ -322,7 +353,7 @@ send_a_message() {
 
 ## 设置
 show_settings() {
-    RESPONSE=$(zenity --forms --title="聊天室 - 设置" --text="修改设置" --separator="|" --add-entry="服务器地址和端口（$SERVER_ADDRESS）：")
+    RESPONSE=$(zenity --forms --title="$SOFTWARE_NAME - 设置" --text="修改设置" --separator="|" --add-entry="服务器地址和端口（$SERVER_ADDRESS）：")
 
     case $? in
          0)
@@ -338,7 +369,7 @@ show_settings() {
             return 0
         ;;
         -1)
-            zenity --error --text="发生意外错误。"
+            zenity --error --text="$(recho "发生意外错误。" "An error has occurred.")"
             return 1
         ;;
     esac
@@ -350,19 +381,19 @@ show_settings() {
 show_home-dialog() {
     while true; do
         ### 定义对话框的内容
-        local DIALOG_CONTENT="昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。"
+        local DIALOG_CONTENT="$(recho "昵称：$NICKNAME\n房间号：$ROOM_ID\n请选择操作。" "Nickname: $NICKNAME\nRoom ID: $ROOM_ID\nPlease select an option.")"
 
         ### 定义选项
         local OPTIONS=(
-            "1" "进入房间"
-            "2" "更新昵称和房间号"
-            "3" "设置"
-            "4" "退出"
+            "1" "$(recho "进入聊天室" "Enter chat room")"
+            "2" "$(recho "更新昵称和房间号" "Update nickname and room ID")"
+            "3" "$(recho "设置" "Settings")"
+            "4" "$(recho "保存并退出" "Save and exit")"
         )
 
         ### 使用 dialog 创建选择列表
-        CHOICE=$(dialog --no-cancel --backtitle "聊天室" \
-            --title "聊天室" \
+        CHOICE=$(dialog --no-cancel --backtitle "$SOFTWARE_NAME" \
+            --title "$SOFTWARE_NAME" \
             --menu "$DIALOG_CONTENT" 15 60 4 \
             "${OPTIONS[@]}" 2>&1 >/dev/tty)
 
@@ -382,7 +413,7 @@ show_home-dialog() {
                 exit 0
             ;;
             *)
-                dialog --msgbox "请选择一个选项。" 8 30
+                dialog --msgbox "$(recho "请选择一个选项。" "Please select an option.")" 8 30
                 continue
             ;;
         esac
@@ -393,18 +424,18 @@ show_home-dialog() {
 edit_info-dialog() {
     while true; do
         ### 定义对话框的标题
-        DIALOG_TITLE="聊天室 - 更新信息"
+        DIALOG_TITLE="$SOFTWARE_NAME - 更新信息"
 
         ### 创建输入字段
         NEW_NICKNAME=$(dialog --backtitle "$DIALOG_TITLE" \
-            --title "更新昵称" \
-            --inputbox "留空以保持现有状态。\n昵称（$NICKNAME）：" 8 60 3>&1 1>&2 2>&3)
+            --title "$(recho "更新昵称" "Update nickname")" \
+            --inputbox "$(recho "留空以保持现有状态。\n昵称（$NICKNAME）：" "Leave blank to keep the original.\nNickname($NICKNAME): ")" 8 60 3>&1 1>&2 2>&3)
         exit_status=$?
 
         if [ $exit_status -eq 0 ]; then
             NEW_ROOM_ID=$(dialog --backtitle "$DIALOG_TITLE" \
-                --title "更新房间号" \
-                --inputbox "留空以保持现有状态。\n房间号（$ROOM_ID）：" 8 60 3>&1 1>&2 2>&3)
+                --title "$(recho "更新房间号" "Update room ID")" \
+                --inputbox "$(recho "留空以保持现有状态。\n房间号（$ROOM_ID）：" "Leave blank to keep the original.\nRoom ID($ROOM_ID): ")" 8 60 3>&1 1>&2 2>&3)
             exit_status=$?
         fi
 
@@ -414,7 +445,7 @@ edit_info-dialog() {
             ROOM_ID=${NEW_ROOM_ID:-"$ROOM_ID"}
 
             ### 显示更新的信息
-            dialog --msgbox "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID" 10 60
+            dialog --msgbox "$(recho "已更新昵称和房间号：\n- 昵称：$NICKNAME\n- 房间号：$ROOM_ID\n" "Updated:\n- Nickname: $NICKNAME\n- Room ID: $ROOM_ID\n")" 10 60
 
             ### 保存设置并返回主页
             times_down_to_zero
@@ -424,7 +455,7 @@ edit_info-dialog() {
             ### 用户点击了取消按钮
             return 0
         else
-            dialog --error "发生意外错误。"
+            dialog --error "$(recho "发生意外错误。" "An error has occurred.")"
             return 1
         fi
     done
@@ -435,34 +466,34 @@ show_chat_room-dialog() {
     while true; do
         ### 获取聊天记录
         if [ $(($(cat $COUNTING))) -eq 0 ]; then
-            echo "正在获取聊天记录……"
+            recho "正在获取聊天记录……" "Loading chat log..."
             RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
             if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
                 CHAT_LOG="${BASH_REMATCH[1]}"
                 CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
             fi
         else
-            echo "从缓存读取聊天记录……"
+            recho "从缓存读取聊天记录……" "Reading chat log from cache..."
         fi
 
         ### 判断聊天记录是否正常获取
         if [ -z "$CHAT_LOG" ]; then
-            dialog --title "错误" --msgbox "无法获取聊天记录！\n请检查网络链接和服务器地址设置。" 0 0
+            dialog --title "$(recho "错误" "Error")" --msgbox "$(recho "无法获取聊天记录！\n请检查网络链接和服务器地址设置。" "Failed to load chat history!\nPlease check your network connection and server address settings.")" 0 0
             times_down_to_zero
             return 1
         fi
         times_down
 
         ### 用户选择
-        code=$(dialog --no-cancel --clear --title "聊天室 - $ROOM_ID" \
+        code=$(dialog --no-cancel --clear --title "$SOFTWARE_NAME - $ROOM_ID" \
             --menu "$(
                 echo "$CHAT_LOG"
                 echo
-                echo "请选择操作："
+                recho "请选择操作：" "Please select an option:"
             )" 0 0 0 \
-            "1" "发送消息" \
-            "2" "刷新消息" \
-            "3" "返回主页" 2>&1 >/dev/tty)
+            "1" "$(recho "发送消息" "Send message")" \
+            "2" "$(recho "刷新消息" "Refresh message")" \
+            "3" "$(recho "返回主页" "Back")" 2>&1 >/dev/tty)
 
         case $code in
             1)
@@ -475,7 +506,7 @@ show_chat_room-dialog() {
                 return 0
             ;;
             *)
-                dialog --title "警告" --msgbox "选择无效，请重新选择：" 0 0
+                dialog --title "$(recho "警告" "Warning")" --msgbox "$(recho "选择无效，请重新选择：" "Invalid selection, please reselect:")" 0 0
             ;;
         esac
     done
@@ -483,16 +514,17 @@ show_chat_room-dialog() {
 
 ## 发送消息 - dialog
 send_a_message-dialog() {
-    message=$(dialog --clear --title "聊天室 - $ROOM_ID - 发送" \
+    message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - 发送" \
         --inputbox "请输入您要发送的信息：" 10 60 \
         2>&1 >/dev/tty)
 
     if [ $? -eq 0 -o ! -z "$message" ]; then
+        echo "开始发送信息……"
         RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
         echo "正在处理信息……"
         times_down_to_zero
         
-        if [ "$RETURN" = "302" ]; then
+        if [ "$RETURN" == "302" ]; then
             echo "已发送消息。"
         else
             dialog --backtitle "$RETURN" --title "错误" --msgbox "消息发送失败：\n- 错误代码：$RETURN\n" 0 0
@@ -622,7 +654,7 @@ send_a_message-cli() {
         echo "正在处理信息……"
         times_down_to_zero
         
-        if [ "$RETURN" = "302" ]; then
+        if [ "$RETURN" == "302" ]; then
             echo "已发送消息。"
         else
             printf "消息发送失败：\n- 错误代码：$RETURN\n"
@@ -652,9 +684,9 @@ show_settings-cli() {
 
 # 主程序入口
 load_settings
-if [ "$ZENITY_AVAL" = "true" ]; then
+if [ "$ZENITY_AVAL" == "true" ]; then
     show_home
-elif [ "$DIALOG_AVAL" = "true" ]; then
+elif [ "$DIALOG_AVAL" == "true" ]; then
     show_home-dialog
 else
     show_home-cli
