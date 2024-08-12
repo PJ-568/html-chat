@@ -2,6 +2,7 @@
 
 ZENITY_AVAL="true"
 DIALOG_AVAL="true"
+VERSION="0.1.0"
 
 for i in "$*"; do
     if [ "$i" = "--zenity" ]; then
@@ -13,6 +14,10 @@ for i in "$*"; do
     elif [ "$i" = "--cli" ]; then
         ZENITY_AVAL="false"
         DIALOG_AVAL="false"
+    elif [ "$i" = "--version" ]; then
+        printf "聊天室客户端 v$VERSION\n"
+    elif [ "$i" = "--help" ]; then
+        printf "聊天室客户端\n--zenity     使用 zenity 作为 UI\n--dialog     使用 dialog 作为 UI\n--cli        使用命令行作为 UI\n--version    显示版本信息\n"
     fi
 done
 
