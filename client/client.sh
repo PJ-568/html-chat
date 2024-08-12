@@ -57,7 +57,7 @@ SETTINGS_FILE="${HOME}/.config/html-chat-gtk/setting.txt"
 # 创建配置目录
 mkdir -p "${HOME}/.config/html-chat-gtk"
 
-# 默认值
+# 用户设置默认值
 NICKNAME="匿名"
 ROOM_ID="默认"
 SERVER_ADDRESS="https://chat.serv.pj568.sbs"
@@ -362,9 +362,9 @@ show_home-dialog() {
 
         ### 使用 dialog 创建选择列表
         CHOICE=$(dialog --backtitle "聊天室" \
-                        --title "聊天室" \
-                        --menu "$DIALOG_CONTENT" 15 60 4 \
-                        "${OPTIONS[@]}" 2>&1 >/dev/tty)
+            --title "聊天室" \
+            --menu "$DIALOG_CONTENT" 15 60 4 \
+            "${OPTIONS[@]}" 2>&1 >/dev/tty)
 
         ### 根据用户的选择执行相应的操作
         case "$CHOICE" in
@@ -381,10 +381,6 @@ show_home-dialog() {
                 save_settings
                 exit 0
             ;;
-            "")
-                ### 如果用户点击了取消按钮
-                exit 0
-            ;;
             *)
                 dialog --msgbox "请选择一个选项。" 8 30
                 continue
@@ -399,19 +395,16 @@ edit_info-dialog() {
         ### 定义对话框的标题
         DIALOG_TITLE="聊天室 - 更新信息"
 
-        ### 定义对话框的内容
-        DIALOG_CONTENT="更新昵称和房间号，留空则维持原样"
-
         ### 创建输入字段
         NEW_NICKNAME=$(dialog --backtitle "$DIALOG_TITLE" \
-                            --title "更新昵称" \
-                            --inputbox "留空以保持现有状态。\n昵称（$NICKNAME）：" 8 60 3>&1 1>&2 2>&3)
+            --title "更新昵称" \
+            --inputbox "留空以保持现有状态。\n昵称（$NICKNAME）：" 8 60 3>&1 1>&2 2>&3)
         exit_status=$?
 
         if [ $exit_status -eq 0 ]; then
             NEW_ROOM_ID=$(dialog --backtitle "$DIALOG_TITLE" \
-                                --title "更新房间号" \
-                                --inputbox "留空以保持现有状态。\n房间号（$ROOM_ID）：" 8 60 3>&1 1>&2 2>&3)
+                --title "更新房间号" \
+                --inputbox "留空以保持现有状态。\n房间号（$ROOM_ID）：" 8 60 3>&1 1>&2 2>&3)
             exit_status=$?
         fi
 
@@ -431,95 +424,82 @@ edit_info-dialog() {
             ### 用户点击了取消按钮
             return 0
         else
-            ### 发生了错误
             dialog --error "发生意外错误。"
             return 1
         fi
     done
 }
 
-## 显示聊天室 - dialog（有毛病）
+## 显示聊天室 - dialog
 show_chat_room-dialog() {
-    ### 获取聊天记录
-    if [ $(($(cat $COUNTING))) -eq 0 ]; then
-        (
+    while true; do
+        ### 获取聊天记录
+        if [ $(($(cat $COUNTING))) -eq 0 ]; then
+            echo "正在获取聊天记录……"
             RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
-            echo "65"
-            echo "已请求聊天记录信息：$RESPONSE"
-            echo "70"
-            echo "# 正在格式化信息……"
             if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
-                echo "85"
-                export CHAT_LOG="${BASH_REMATCH[1]}"
-                echo "90"
-                export CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
+                CHAT_LOG="${BASH_REMATCH[1]}"
+                CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
             fi
-            echo "# 正在记录日志……"
-            echo "$CHAT_LOG" > "$TEMP_FILE"
-            echo "100"
-        ) &
-        pid=$!
-        while kill -0 $pid > /dev/null 2>&1; do
-            dialog --progressbox "正在获取聊天记录……" 10 60 0 100
-            sleep 1
-        done
-        wait $pid
-        case $? in
-            1)
-                show_home-dialog
-            ;;
-            -1)
-                dialog --msgbox "发生意外错误。" 8 30
-            ;;
-        esac
-    else
-        echo "从缓存读取聊天记录……"
-    fi
-    CHAT_LOG=$(cat "$TEMP_FILE")
-
-    ### 判断聊天记录是否正常获取
-    if [ -z "$CHAT_LOG" ]; then
-        printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
-        dialog --msgbox "无法获取聊天记录！\n请检查网络链接和服务器地址设置。" 10 60
-        times_down_to_zero
-        show_home-dialog
-    else
-        times_down
-        printf "聊天记录：\n$CHAT_LOG\n"
-
-        ### 显示聊天记录
-        TIMEOUT=$(($(cat $COUNTING)))
-        if [ $TIMEOUT -eq 0 ]; then
-            TIMEOUT=60
+        else
+            echo "从缓存读取聊天记录……"
         fi
-        ((TIMEOUT+=4))
 
-        ### 使用 dialog 创建列表对话框
-        CHOICE=$(dialog --backtitle "聊天室 - $ROOM_ID" \
-                        --title "聊天记录" \
-                        --ok-label "发送消息" \
-                        --cancel-label "返回主页" \
-                        --extra-button --extra-label "刷新" \
-                        --textbox "$TEMP_FILE" 15 60 2>&1 >/dev/tty)
+        ### 判断聊天记录是否正常获取
+        if [ -z "$CHAT_LOG" ]; then
+            dialog --title "错误" --msgbox "无法获取聊天记录！\n请检查网络链接和服务器地址设置。" 0 0
+            times_down_to_zero
+            return 1
+        fi
+        times_down
 
-        case $? in
-            0)  ### 发送消息
-                send_a_message
+        ### 用户选择
+        code=$(dialog --title "聊天室 - $ROOM_ID" \
+            --menu "$(
+                echo "$CHAT_LOG"
+                echo
+                echo "请选择操作："
+            )" 0 0 0 \
+            "1" "发送消息" \
+            "2" "刷新消息" \
+            "3" "返回主页" 2>&1 >/dev/tty)
+
+        case $code in
+            1)
+                send_a_message-dialog
             ;;
-            1)  ### 返回主页
-                show_home
+            2)
+                continue
             ;;
-            2)  ### 刷新
-                show_chat_room
-            ;;
-            255)  ### 取消或关闭对话框
-                show_home
+            3)
+                return 0
             ;;
             *)
-                dialog --msgbox "发生意外错误。" 8 30
+                dialog --title "警告" --msgbox "选择无效，请重新选择：" 0 0
             ;;
         esac
+    done
+}
+
+## 发送消息 - dialog
+send_a_message-dialog() {
+    message=$(dialog --title "聊天室 - $ROOM_ID - 发送" \
+        --inputbox "请输入您要发送的信息：" 10 60 \
+        2>&1 >/dev/tty)
+
+    if [ $? -eq 0 -o ! -z "$message" ]; then
+        RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
+        echo "正在处理信息……"
+        times_down_to_zero
+        
+        if [ "$RETURN" = "302" ]; then
+            echo "已发送消息。"
+        else
+            dialog --backtitle "$RETURN" --title "错误" --msgbox "消息发送失败：\n- 错误代码：$RETURN\n" 0 0
+            return $RETURN
+        fi
     fi
+    return 0
 }
 
 # cli 模式
@@ -602,7 +582,6 @@ show_chat_room-cli() {
         ### 判断聊天记录是否正常获取
         if [ -z "$CHAT_LOG" ]; then
             printf "无法获取聊天记录！\n请检查网络链接和服务器地址设置。\n"
-            zenity --error --text="无法获取聊天记录！\n请检查网络链接和服务器地址设置。"
             times_down_to_zero
             return 1
         fi
