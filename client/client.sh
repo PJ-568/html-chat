@@ -16,6 +16,20 @@ for i in "$*"; do
     fi
 done
 
+# 依赖缺失提醒
+inform_dependency() {
+    for i in "$*"; do
+        if [ "$ZENITY_AVAL" = "true" ]; then
+            zenity --warning --text="请先安装 $i 以继续使用。"
+        elif [ "$DIALOG_AVAL" = "true" ]; then
+            dialog --msgbox "安装 zenity 以获得更佳体验。\n请先安装 $i 以继续使用。" 8 30
+        else
+            echo >&2 "安装 zenity 或 dialog 以获得更佳体验。\n请先安装 $i 以继续使用。";
+        fi
+    done
+    exit 1
+}
+
 # 检查依赖
 if [ "$ZENITY_AVAL" = "true" ]; then
     zenity --version > /dev/null 2>&1 || { echo >&2 "安装 zenity 以获得更佳体验。"; ZENITY_AVAL="false"; }
@@ -23,12 +37,12 @@ fi
 if [ "$DIALOG_AVAL" = "true" ]; then
     dialog --version > /dev/null 2>&1 || { echo >&2 "安装 dialog 以获得更佳体验。"; DIALOG_AVAL="false"; }
 fi
-curl --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 curl 以继续使用。"; exit 1; }
-mkdir --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mkdir 以继续使用。"; exit 1; }
-sed --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 sed 以继续使用。"; exit 1; }
-mktemp --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 mktemp 以继续使用。"; exit 1; }
-cat --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 cat 以继续使用。"; exit 1; }
-grep --version > /dev/null 2>&1 || { zenity --warning --text="请先安装 grep 以继续使用。"; exit 1; }
+curl --version > /dev/null 2>&1 || { inform_dependency "curl"; }
+mkdir --version > /dev/null 2>&1 || { inform_dependency "mkdir"; }
+sed --version > /dev/null 2>&1 || { inform_dependency "sed"; }
+mktemp --version > /dev/null 2>&1 || { inform_dependency "mktemp"; }
+cat --version > /dev/null 2>&1 || { inform_dependency "cat"; }
+grep --version > /dev/null 2>&1 || { inform_dependency "grep"; }
 
 # 设置文件路径
 SETTINGS_FILE="${HOME}/.config/html-chat-gtk/setting.txt"
@@ -256,7 +270,7 @@ send_a_message() {
                         echo "# 正在处理信息……"
                         times_down_to_zero
                         echo "25"
-                        ech
+                        
                         if [ "$RETURN" = "302" ]; then
                             echo "" > "$TEMP_FILE"
                         else
@@ -356,7 +370,7 @@ show_home-dialog() {
             ;;
             *)
                 dialog --msgbox "请选择一个选项。" 8 30
-                show_home
+                continue
             ;;
         esac
     done
@@ -511,7 +525,7 @@ show_home-cli() {
         elif [ "$choice" -eq 2 ]; then
             edit_info-cli
         elif [ "$choice" -eq 3 ]; then
-            show_settings
+            show_settings-cli
         elif [ "$choice" -eq 4 ]; then
             save_settings
             exit 0
@@ -611,7 +625,7 @@ send_a_message-cli() {
         RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
         echo "正在处理信息……"
         times_down_to_zero
-        ech
+        
         if [ "$RETURN" = "302" ]; then
             echo "已发送消息。"
         else
@@ -623,28 +637,22 @@ send_a_message-cli() {
 }
 
 ## 设置 - cli
-# show_settings-cli() {
-#     RESPONSE=$(zenity --forms --title="聊天室 - 设置" --text="修改设置" --separator="|" --add-entry="服务器地址和端口（$SERVER_ADDRESS）：")
+show_settings-cli() {
+    printf "\n==聊天室 - 设置==\n"
+    printf "服务器地址和端口：$SERVER_ADDRESS\n请输入新的服务器地址和端口，留空则恢复默认。\n新服务器地址和端口："
 
-#     case $? in
-#          0)
-#             IFS='|'
-#             read -ra ADDR <<< "$RESPONSE"
+    read choice0
 
-#             SERVER_ADDRESS=${ADDR[0]:-"https://chat.serv.pj568.sbs"}
-#             printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
-#             save_settings
-#             exit 0
-#         ;;
-#          1)
-#             exit 0
-#         ;;
-#         -1)
-#             zenity --error --text="发生意外错误。"
-#             exit 1
-#         ;;
-#     esac
-# }
+    if [ ! -z "$choice0" ]; then
+        SERVER_ADDRESS="$choice0"
+    else
+        SERVER_ADDRESS="https://chat.serv.pj568.sbs"
+    fi
+
+    printf "已修改设置：\n- 服务器地址和端口：$SERVER_ADDRESS\n"
+    save_settings
+    return 0
+}
 
 # 主程序入口
 load_settings
