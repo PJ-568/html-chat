@@ -8,6 +8,8 @@
 
 ## 服务端
 
+直接运行：`curl -sS https://gitee.com/PJ-568/html-chat/raw/main/client/client.sh | bash`
+
 文件：`./server/server.py`
 
 运行：`python server.py --port 2666`
