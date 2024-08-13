@@ -146,6 +146,7 @@ mkdir --version > /dev/null 2>&1 || { inform_dependency "mkdir"; }
 sed --version > /dev/null 2>&1 || { inform_dependency "sed"; }
 mktemp --version > /dev/null 2>&1 || { inform_dependency "mktemp"; }
 cat --version > /dev/null 2>&1 || { inform_dependency "cat"; }
+clear -V > /dev/null 2>&1 || { inform_dependency "clear"; }
 grep --version > /dev/null 2>&1 || { inform_dependency "grep"; }
 
 # 设置文件路径
@@ -604,7 +605,7 @@ send_a_message-dialog() {
 
 ## 显示主页 - cli
 show_home-cli() {
-    printf "\ec"
+    clear -x
     while true; do
         printf "\n==$SOFTWARE_NAME==\n"
         printf "$H_SHOW_NICKNAME$NICKNAME\n$H_SHOW_ROOM$ROOM_ID\n"
@@ -633,7 +634,7 @@ show_home-cli() {
 
 ## 更新昵称和房间号 - cli
 edit_info-cli() {
-    printf "\ec"
+    clear -x
     ### 是否有更新内容
     is_updated=0
     printf "\n==$SOFTWARE_NAME - $U_TITLE==\n"
@@ -666,7 +667,7 @@ edit_info-cli() {
 
 ## 显示聊天室 - cli
 show_chat_room-cli() {
-    printf "\ec"
+    clear -x
     while true; do
         ### 获取聊天记录
         if [ $(($(cat $COUNTING))) -eq 0 ]; then
@@ -712,7 +713,7 @@ show_chat_room-cli() {
 
 ## 发送消息 - cli
 send_a_message-cli() {
-    printf "\ec"
+    clear -x
     printf "\n==$SOFTWARE_NAME - $ROOM_ID - $M_SEND==\n"
     echo "$U_TIC"
     printf "$NICKNAME $M_SAY"
@@ -736,7 +737,7 @@ send_a_message-cli() {
 
 ## 设置 - cli
 show_settings-cli() {
-    printf "\ec"
+    clear -x
     printf "\n==$SOFTWARE_NAME - $P_SETTINGS==\n"
     printf "$U_TIC\n[$SERVER_ADDRESS]$S_SHOW_SERVER"
 
