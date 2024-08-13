@@ -1,16 +1,50 @@
 #!/bin/bash
 
+ZENITY_AVAL=1
+DIALOG_AVAL=1
+LANG_SET=0
+IS_HELPER=0
+CURRENT_LANG=0
+
+for i in $@; do
+    if [ "$i" == "--en" ]; then
+        CURRENT_LANG=0
+        LANG_SET=1
+    elif [ "$i" == "--zh" ]; then
+        CURRENT_LANG=1
+        LANG_SET=1
+    elif [ "$i" == "--zenity" -o "$i" == "-z" ]; then
+        ZENITY_AVAL=1
+        DIALOG_AVAL=0
+    elif [ "$i" == "--dialog" -o "$i" == "-d" ]; then
+        ZENITY_AVAL=0
+        DIALOG_AVAL=1
+    elif [ "$i" == "--cli" -o "$i" == "-c" ]; then
+        ZENITY_AVAL=0
+        DIALOG_AVAL=0
+    elif [ "$i" == "--version" -o "$i" == "-v" ]; then
+        echo "$0 v$VERSION"
+        exit 0
+    elif [ "$i" == "--help" -o "$i" == "-h" ]; then
+        IS_HELPER=1
+    fi
+done
+
 # 语言相关
 
 ## 语言检测
-CURRENT_LANG=0
-if [ $(echo ${LANG/_/-} | grep -Ei "\\b(zh|cn)\\b") ]; then CURRENT_LANG=1; fi
+
+if [ ! $LANG_SET == 1 ]; then
+    if [ $(echo ${LANG/_/-} | grep -Ei "\\b(zh|cn)\\b") ]; then CURRENT_LANG=1; fi
+fi
 
 ## 本地化
 recho() {
     if [ $CURRENT_LANG == 1 ]; then
+        ### zh-Hans
         echo $1;
     else
+        ### en-US
         echo $2;
     fi
 }
@@ -72,7 +106,7 @@ C_REFRESH="$(recho "刷新" "Refresh")"
 ### 发送
 
 M_SEND="$(recho "发送" "Send")"
-M_SAY="$(recho "说：" " Say: ")"
+M_SAY="$(recho "说：" "Says: ")"
 M_SENDING="$(recho "正在发送……" "Sending...")"
 M_FAIL="$(recho "发送失败：" "Failed to send:")"
 
@@ -81,34 +115,17 @@ M_FAIL="$(recho "发送失败：" "Failed to send:")"
 S_EDIT="$(recho "编辑" "Edit")"
 S_SHOW_SERVER="$(recho "服务器地址和端口：" "Server Address: ")"
 
-ZENITY_AVAL="true"
-DIALOG_AVAL="true"
-
-for i in "$*"; do
-    if [ "$i" == "--zenity" -o "$i" == "-z" ]; then
-        ZENITY_AVAL="true"
-        DIALOG_AVAL="false"
-    elif [ "$i" == "--dialog" -o "$i" == "-d" ]; then
-        ZENITY_AVAL="false"
-        DIALOG_AVAL="true"
-    elif [ "$i" == "--cli" -o "$i" == "-c" ]; then
-        ZENITY_AVAL="false"
-        DIALOG_AVAL="false"
-    elif [ "$i" == "--version" -o "$i" == "-v" ]; then
-        echo "$0 v$VERSION"
-        exit 0
-    elif [ "$i" == "--help" -o "$i" == "-h" ]; then
-        printf "$(recho "$0 v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n" "$0 v$VERSION\n-z --zenity\tuse zenity as UI\n-d --dialog\tuse dialog as UI\n-c --cli\tuse command line as UI\n-v --version\tshow version information\n-h --help\tshow help information\n")"
-        exit 0
-    fi
-done
+if [ $IS_HELPER -eq 1 ]; then
+    printf "$(recho "$SOFTWARE_NAME v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n--zh\t\t中文模式\n--en\t\t英文模式\n" "$SOFTWARE_NAME v$VERSION\n-z --zenity\tuse zenity as UI\n-d --dialog\tuse dialog as UI\n-c --cli\tuse command line as UI\n-v --version\tshow version information\n-h --help\tshow help information\n--zh\t\tChinese mode\n--en\t\tEnglish mode\n")"
+    exit 0
+fi
 
 # 依赖缺失提醒
 inform_dependency() {
     for i in "$*"; do
-        if [ "$ZENITY_AVAL" == "true" ]; then
+        if [ $ZENITY_AVAL -eq 1 ]; then
             zenity --warning --text="$(recho "请先安装 $i 以继续使用。" "Please install $i first to continue.")"
-        elif [ "$DIALOG_AVAL" == "true" ]; then
+        elif [ $DIALOG_AVAL -eq 1 ]; then
             dialog --msgbox "$(recho "安装 zenity 以获得更佳体验。\n请先安装 $i 以继续使用。" "Install zenity for better experience.\nPlease install $i first to continue.")" 0 0
         else
             printf >&2 "$(recho "安装 zenity 或 dialog 以获得更佳体验。\n请先安装 $i 以继续使用。" "Install zenity or dialog for better experience.\nPlease install $i first to continue.")\n";
@@ -118,11 +135,11 @@ inform_dependency() {
 }
 
 # 检查依赖
-if [ "$ZENITY_AVAL" == "true" ]; then
-    zenity --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 zenity 以获得更佳体验。" "Install zenity for better experience.")\n"; ZENITY_AVAL="false"; }
+if [ $ZENITY_AVAL -eq 1 ]; then
+    zenity --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 zenity 以获得更佳体验。" "Install zenity for better experience.")\n"; ZENITY_AVAL=0; }
 fi
-if [ "$DIALOG_AVAL" == "true" ]; then
-    dialog --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 dialog 以获得更佳体验。" "Install dialog for better experience.")\n"; DIALOG_AVAL="false"; }
+if [ $DIALOG_AVAL -eq 1 ]; then
+    dialog --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 dialog 以获得更佳体验。" "Install dialog for better experience.")\n"; DIALOG_AVAL=0; }
 fi
 curl --version > /dev/null 2>&1 || { inform_dependency "curl"; }
 mkdir --version > /dev/null 2>&1 || { inform_dependency "mkdir"; }
@@ -348,7 +365,7 @@ show_chat_room() {
 ## 发送消息
 send_a_message() {
     while true; do
-        MESSAGE=$(zenity --entry --title="$SOFTWARE_NAME - $ROOM_ID - $M_SEND" --text="$NICKNAME$M_SAY")
+        MESSAGE=$(zenity --entry --title="$SOFTWARE_NAME - $ROOM_ID - $M_SEND" --text="$NICKNAME $M_SAY")
 
         case $? in
             0)
@@ -404,7 +421,7 @@ send_a_message() {
 
 ## 设置
 show_settings() {
-    RESPONSE=$(zenity --forms --title="$SOFTWARE_NAME - $P_SETTINGS" --text="$S_EDIT$P_SETTINGS" --separator="|" --add-entry="[$SERVER_ADDRESS]$S_SHOW_SERVER")
+    RESPONSE=$(zenity --forms --title="$SOFTWARE_NAME - $P_SETTINGS" --text="$S_EDIT $P_SETTINGS" --separator="|" --add-entry="[$SERVER_ADDRESS]$S_SHOW_SERVER")
 
     case $? in
          0)
@@ -565,7 +582,7 @@ show_chat_room-dialog() {
 ## 发送消息 - dialog
 send_a_message-dialog() {
     message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - $M_SEND" \
-        --inputbox "$NICKNAME$M_SAY" 10 60 \
+        --inputbox "$NICKNAME $M_SAY" 10 60 \
         2>&1 >/dev/tty)
 
     if [ $? -eq 0 -o ! -z "$message" ]; then
@@ -598,13 +615,13 @@ show_home-cli() {
 
         read choice
 
-        if [ "$choice" -eq 1 ]; then
+        if [ "$choice" == "1" ]; then
             show_chat_room-cli
-        elif [ "$choice" -eq 2 ]; then
+        elif [ "$choice" == "2" ]; then
             edit_info-cli
-        elif [ "$choice" -eq 3 ]; then
+        elif [ "$choice" == "3" ]; then
             show_settings-cli
-        elif [ "$choice" -eq 4 ]; then
+        elif [ "$choice" == "4" ]; then
             save_settings
             exit 0
         else
@@ -678,11 +695,11 @@ show_chat_room-cli() {
 
         read choice
 
-        if [ "$choice" -eq 1 ]; then
+        if [ "$choice" == "1" ]; then
             send_a_message-cli
-        elif [ "$choice" -eq 2 ]; then
+        elif [ "$choice" == "2" ]; then
             continue
-        elif [ "$choice" -eq 3 ]; then
+        elif [ "$choice" == "3" ]; then
             return 0
         else
             echo "$E_INVALID"
@@ -694,7 +711,7 @@ show_chat_room-cli() {
 send_a_message-cli() {
     printf "\n==$SOFTWARE_NAME - $ROOM_ID - $M_SEND==\n"
     echo "$U_TIC"
-    printf "$NICKNAME$M_SAY"
+    printf "$NICKNAME $M_SAY"
 
     read message
 
@@ -733,9 +750,9 @@ show_settings-cli() {
 
 # 主程序入口
 load_settings
-if [ "$ZENITY_AVAL" == "true" ]; then
+if [ $ZENITY_AVAL -eq 1 ]; then
     show_home
-elif [ "$DIALOG_AVAL" == "true" ]; then
+elif [ $DIALOG_AVAL -eq 1 ]; then
     show_home-dialog
 else
     show_home-cli

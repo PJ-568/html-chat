@@ -18,4 +18,4 @@
 
 文件：`./client/client.sh`
 
-运行：`bash ./client.sh --cli --dialog --zenity --help --version`
+运行：`bash ./client.sh --cli --dialog --zenity --help --version --zh --en`
