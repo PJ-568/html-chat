@@ -605,8 +605,8 @@ send_a_message-dialog() {
 
 ## 显示主页 - cli
 show_home-cli() {
-    clear -x
     while true; do
+        clear -x
         printf "\n==$SOFTWARE_NAME==\n"
         printf "$H_SHOW_NICKNAME$NICKNAME\n$H_SHOW_ROOM$ROOM_ID\n"
         echo "1. $H_ENTER_ROOM"
