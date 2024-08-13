@@ -1,4 +1,4 @@
-# html-chat
+# lb-chat
 
 通过互联网和朋友聊天吧。
 

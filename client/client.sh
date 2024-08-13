@@ -55,7 +55,7 @@ recho() {
 
 #### 基本信息
 
-SOFTWARE_NAME="$(recho "聊天室" "HTML-Chat")"
+SOFTWARE_NAME="$(recho "LB 聊天室" "LB-Chat")"
 VERSION="0.1.0"
 
 #### 提示
