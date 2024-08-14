@@ -606,22 +606,26 @@ send_a_message-dialog() {
             --inputbox "$NICKNAME $M_SAY" 10 60 \
             2>&1 >/dev/tty)
 
-        if [ $? -eq 0 -o ! -z "$message" ]; then
-            if [[ "$message" =~ [\<\&\>\"\'] ]]; then
-                dialog --backtitle "$E_ERR" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
-                continue
+        if [ $? -eq 0 ]; then
+            if [ ! -z "$message" ]; then
+                if [[ "$message" =~ [\<\&\>\"\'] ]]; then
+                    dialog --backtitle "$E_ERR" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
+                    continue
+                fi
+                echo "$M_SENDING"
+                RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
+                recho "$P_FORMATTING"
+                times_down_to_zero
+                
+                if [ "$RETURN" == "302" ]; then
+                    return 0
+                else
+                    dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
+                    return $RETURN
+                fi
             fi
-            echo "$M_SENDING"
-            RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
-            recho "$P_FORMATTING"
-            times_down_to_zero
-            
-            if [ "$RETURN" == "302" ]; then
-                return 0
-            else
-                dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
-                return $RETURN
-            fi
+        else
+            return 0
         fi
     done
 }
