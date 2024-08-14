@@ -25,7 +25,7 @@ for i in $@; do
         ZENITY_AVAL=0
         DIALOG_AVAL=0
     elif [ "$i" == "--version" -o "$i" == "-v" ]; then
-        echo "$0 v$VERSION"
+        echo "$VERSION"
         exit 0
     elif [ "$i" == "--help" -o "$i" == "-h" ]; then
         IS_HELPER=1
@@ -72,6 +72,7 @@ P_EXIT="$(recho "退出" "Exit")"
 P_FORMATTING="$(recho "正在格式化信息……" "Formatting information...")"
 P_LOGGING="$(recho "正在记录日志……" "Logging...")"
 P_PRESS="$(recho "按回车键继续。" "Press Enter to continue.")"
+P_OK="$(recho "确认" "OK")"
 
 #### 错误提示
 
@@ -81,6 +82,7 @@ E_EXIT="$(recho "发生意外错误。软件即将退出。" "An unexpected erro
 E_NETWORK="$(recho "请检查网络链接和服务器地址设置。" "Please check your network connection and server address settings.")"
 E_CODE="$(recho "错误代码：" "Error code: ")"
 E_INVALID="$(recho "无效输入。" "Invalid input.")"
+E_TOOLONG="$(recho "输入过长。" "Input too long.")"
 
 ### 主页
 
@@ -134,6 +136,9 @@ if [ $IS_HELPER -eq 1 ]; then
     printf "$(recho "$SOFTWARE_NAME v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n--zh\t\t中文模式\n--en\t\t英文模式" "$SOFTWARE_NAME v$VERSION\n-z --zenity\tuse zenity as UI\n-d --dialog\tuse dialog as UI\n-c --cli\tuse command line as UI\n-v --version\tshow version information\n-h --help\tshow help information\n--zh\t\tChinese mode\n--en\t\tEnglish mode")\n"
     exit 0
 fi
+
+# 输出默认信息
+echo "$SOFTWARE_NAME v$VERSION"
 
 # 依赖缺失提醒
 inform_dependency() {
@@ -342,12 +347,12 @@ show_chat_room() {
 
         ### 显示聊天记录
 
-        TIMEOUT=$(($(cat $COUNTING)))
-        if [ $TIMEOUT -eq 0 ]; then
-            TIMEOUT=60
+        local out_time=$(($(cat $COUNTING)))
+        if [ $out_time -eq 0 ]; then
+            out_time=60
         fi
-        ((TIMEOUT+=4))
-        CHOICE=$(zenity --list --title="$SOFTWARE_NAME - $ROOM_ID" --width=400 --height=400 --timeout=$TIMEOUT --text="$C_TEXT" --column="$C_OPRIONS_AND_MSG" "$C_SEND_MSG" "$P_BACK" "$CHAT_LOG")
+        ((out_time+=4))
+        CHOICE=$(zenity --list --title="$SOFTWARE_NAME - $ROOM_ID" --width=400 --height=400 --timeout=$out_time --text="$C_TEXT" --column="$C_OPRIONS_AND_MSG" "$C_SEND_MSG" "$P_BACK" "$CHAT_LOG")
 
         case $? in
             0)
@@ -385,8 +390,12 @@ send_a_message() {
         case $? in
             0)
                 if [ ! -z "$MESSAGE" ]; then
-                    if [[ "$MESSAGE" =~ [\<\&\>\"\'] ]]; then
+                    if [[ "$MESSAGE" =~ [\<\&\>\"\'\\] ]]; then
                         zenity --error --text="$E_INVALID"
+                        continue
+                    fi
+                    if [ ${#MESSAGE} -gt 1024 ]; then
+                        zenity --error --text="$E_TOO_LONG"
                         continue
                     fi
                     echo "$M_SENDING"
@@ -480,6 +489,7 @@ show_home-dialog() {
 
         ### 使用 dialog 创建选择列表
         CHOICE=$(dialog --no-cancel --backtitle "$SOFTWARE_NAME" \
+             --ok-label "$P_OK" \
             --title "$SOFTWARE_NAME" \
             --menu "$HOME_TEXT" 15 60 4 \
             "${OPTIONS[@]}" 2>&1 >/dev/tty)
@@ -514,13 +524,13 @@ edit_info-dialog() {
         DIALOG_TITLE="$SOFTWARE_NAME - $U_TITLE"
 
         ### 创建输入字段
-        NEW_NICKNAME=$(dialog --backtitle "$DIALOG_TITLE" \
+        NEW_NICKNAME=$(dialog --backtitle "$DIALOG_TITLE" --ok-label "$P_OK" \
             --title "$U_TITLE - $H_SHOW_NICKNAME" \
             --inputbox "$U_TIC\n[$NICKNAME]$H_SHOW_NICKNAME" 8 60 3>&1 1>&2 2>&3)
         exit_status=$?
 
         if [ $exit_status -eq 0 ]; then
-            NEW_ROOM_ID=$(dialog --backtitle "$DIALOG_TITLE" \
+            NEW_ROOM_ID=$(dialog --backtitle "$DIALOG_TITLE" --ok-label "$P_OK" \
                 --title "$U_TITLE - $H_SHOW_ROOM" \
                 --inputbox "$U_TIC\n[$ROOM_ID]$H_SHOW_ROOM" 8 60 3>&1 1>&2 2>&3)
             exit_status=$?
@@ -571,8 +581,13 @@ show_chat_room-dialog() {
         fi
         times_down
 
-        ### 用户选择
-        code=$(dialog --no-cancel --clear --title "$SOFTWARE_NAME - $ROOM_ID" \
+        ### 聊天记录和用户选择
+        local out_time=$(($(cat $COUNTING)))
+        if [ $out_time -eq 0 ]; then
+            out_time=60
+        fi
+        ((out_time+=4))
+        code=$(dialog --no-cancel --clear --ok-label "$P_OK" --timeout $out_time --title "$SOFTWARE_NAME - $ROOM_ID" \
             --menu "$(
                 echo "$CHAT_LOG"
                 echo
@@ -593,7 +608,8 @@ show_chat_room-dialog() {
                 return 0
             ;;
             *)
-                dialog --title "$E_ERR" --msgbox "$E_INVALID" 0 0
+                continue
+                # dialog --title "$E_ERR" --msgbox "$E_INVALID" 0 0
             ;;
         esac
     done
@@ -603,13 +619,17 @@ show_chat_room-dialog() {
 send_a_message-dialog() {
     while true; do
         message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - $M_SEND" \
-            --inputbox "$NICKNAME $M_SAY" 10 60 \
+            --ok-label "$C_SEND_MSG" --inputbox "$NICKNAME $M_SAY" 10 60 \
             2>&1 >/dev/tty)
 
         if [ $? -eq 0 ]; then
             if [ ! -z "$message" ]; then
-                if [[ "$message" =~ [\<\&\>\"\'] ]]; then
+                if [[ "$message" =~ [\<\&\>\"\'\\] ]]; then
                     dialog --backtitle "$E_ERR - $E_INVALID" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
+                    continue
+                fi
+                if [ ${#message} -gt 1024 ]; then
+                    dialog --backtitle "$E_ERR - $E_TOO_LONG" --title "$E_ERR" --msgbox "$E_TOO_LONG" 0 0
                     continue
                 fi
                 echo "$M_SENDING"
@@ -751,9 +771,14 @@ send_a_message-cli() {
         read message
 
         if [ ! -z "$message" ]; then
-            if [[ "$message" =~ [\<\&\>\"\'] ]]; then
-                print "$E_INVALID\n$P_PRESS"
-                read
+            if [[ "$message" =~ [\<\&\>\"\'\\] ]]; then
+                echo "$E_INVALID"
+                read -s -n1 -p "$P_PRESS"
+                continue
+            fi
+            if [ ${#message} -gt 1024 ]; then
+                echo "$E_TOOLONG"
+                read -s -n1 -p "$P_PRESS"
                 continue
             fi
             echo  "$M_SENDING"
