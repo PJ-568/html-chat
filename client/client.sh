@@ -165,10 +165,10 @@ clear -V > /dev/null 2>&1 || { inform_dependency "clear"; }
 grep --version > /dev/null 2>&1 || { inform_dependency "grep"; }
 
 # 设置文件路径
-SETTINGS_FILE="${HOME}/.config/html-chat-gtk/setting.txt"
+SETTINGS_FILE="${HOME}/.config/LB-Chat/setting.txt"
 
 # 创建配置目录
-mkdir -p "${HOME}/.config/html-chat-gtk"
+mkdir -p "${HOME}/.config/LB-Chat"
 
 # 用户设置默认值
 NICKNAME="匿名"
