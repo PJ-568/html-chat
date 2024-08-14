@@ -385,13 +385,18 @@ send_a_message() {
         case $? in
             0)
                 if [ ! -z "$MESSAGE" ]; then
+                    if [[ "$MESSAGE" =~ [\<\&\>\"\'] ]]; then
+                        zenity --error --text="$E_INVALID"
+                        continue
+                    fi
+                    echo "$M_SENDING"
                     (
                         RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$MESSAGE" "$SERVER_ADDRESS/send_message")
                         echo "15"
                         echo "# $P_FORMATTING"
                         times_down_to_zero
                         echo "25"
-                        
+
                         if [ "$RETURN" == "302" ]; then
                             echo "" > "$TEMP_FILE"
                         else
@@ -412,7 +417,7 @@ send_a_message() {
                 fi
 
                 ### 判断发送是否成功
-                ERR_CODE=$(cat "$TEMP_FILE")
+                local ERR_CODE=$(cat "$TEMP_FILE")
                 if [ ! -z "$ERR_CODE" ]; then
                     echo "$M_FAIL"
                     echo "  $E_CODE$ERR_CODE"
@@ -596,23 +601,29 @@ show_chat_room-dialog() {
 
 ## 发送消息 - dialog
 send_a_message-dialog() {
-    message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - $M_SEND" \
-        --inputbox "$NICKNAME $M_SAY" 10 60 \
-        2>&1 >/dev/tty)
+    while true; do
+        message=$(dialog --clear --title "$SOFTWARE_NAME - $ROOM_ID - $M_SEND" \
+            --inputbox "$NICKNAME $M_SAY" 10 60 \
+            2>&1 >/dev/tty)
 
-    if [ $? -eq 0 -o ! -z "$message" ]; then
-        echo "$M_SENDING"
-        RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
-        recho "$P_FORMATTING"
-        times_down_to_zero
-        
-        if [ "$RETURN" == "302" ]; then
-            return 0
-        else
-            dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
-            return $RETURN
+        if [ $? -eq 0 -o ! -z "$message" ]; then
+            if [[ "$message" =~ [\<\&\>\"\'] ]]; then
+                dialog --backtitle "$E_ERR" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
+                continue
+            fi
+            echo "$M_SENDING"
+            RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
+            recho "$P_FORMATTING"
+            times_down_to_zero
+            
+            if [ "$RETURN" == "302" ]; then
+                return 0
+            else
+                dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
+                return $RETURN
+            fi
         fi
-    fi
+    done
 }
 
 # cli 模式
@@ -727,27 +738,34 @@ show_chat_room-cli() {
 
 ## 发送消息 - cli
 send_a_message-cli() {
-    clear -x
-    printf "\n==$SOFTWARE_NAME - $ROOM_ID - $M_SEND==\n"
-    echo "$U_TIC"
-    printf "$NICKNAME $M_SAY"
+    while true; do
+        clear -x
+        printf "\n==$SOFTWARE_NAME - $ROOM_ID - $M_SEND==\n"
+        echo "$U_TIC"
+        printf "$NICKNAME $M_SAY"
 
-    read message
+        read message
 
-    if [ ! -z "$message" ]; then
-        echo  "$M_SENDING"
-        RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
-        echo "$P_FORMATTING"
-        times_down_to_zero
-        
-        if [ "$RETURN" == "302" ]; then
-            return 0
-        else
-            printf "$M_FAIL\n  $E_CODE$RETURN\n$P_PRESS"
-            read
-            return $RETURN
+        if [ ! -z "$message" ]; then
+            if [[ "$message" =~ [\<\&\>\"\'] ]]; then
+                print "$E_INVALID\n$P_PRESS"
+                read
+                continue
+            fi
+            echo  "$M_SENDING"
+            RETURN=$(curl -o /dev/null -s -w %{http_code} -X POST --data-urlencode "nickname=$NICKNAME" --data-urlencode "roomid=$ROOM_ID" --data-urlencode "messageInput=$message" "$SERVER_ADDRESS/send_message")
+            echo "$P_FORMATTING"
+            times_down_to_zero
+            
+            if [ "$RETURN" == "302" ]; then
+                return 0
+            else
+                printf "$M_FAIL\n  $E_CODE$RETURN\n$P_PRESS"
+                read
+                return $RETURN
+            fi
         fi
-    fi
+    done
 }
 
 ## 设置 - cli
