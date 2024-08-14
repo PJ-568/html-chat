@@ -560,7 +560,7 @@ show_chat_room-dialog() {
 
         ### 判断聊天记录是否正常获取
         if [ -z "$CHAT_LOG" ]; then
-            dialog --title "$E_ERR" --msgbox "$$C_FAIL_LOAD\n$E_NETWORK" 0 0
+            dialog --title "$E_ERR" --msgbox "$C_FAIL_LOAD\n$E_NETWORK" 0 0
             times_down_to_zero
             return 1
         fi
