@@ -125,9 +125,9 @@ S_SHOW_SERVER="$(recho "服务器地址和端口：" "Server Address: ")"
 # 输出错误参数
 if [ ! -z "$BAD_INPUT" ]; then
     for i in $BAD_INPUT; do
-        printf "$(recho "无效输入：$i" "Invalid input: $i")\n"
+        printf "$(recho "无效参数：`$i`" "Invalid argument: `$i`")\n"
     done
-    printf "$(recho "可运行 $0 --help 以显示所有可用参数。" "Run $0 --help to see all options.")\n"
+    printf "$(recho "可运行 `$0 --help` 以显示所有可用参数。" "Run `$0 --help` to see all available argument.")\n"
     exit 0
 fi
 
