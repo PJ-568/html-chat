@@ -415,8 +415,8 @@ send_a_message() {
                 ERR_CODE=$(cat "$TEMP_FILE")
                 if [ ! -z "$ERR_CODE" ]; then
                     echo "$M_FAIL"
-                    echo "$E_CODE$ERR_CODE"
-                    zenity --error --text="$M_FAIL\n$E_CODE$ERR_CODE"
+                    echo "  $E_CODE$ERR_CODE"
+                    zenity --error --text="$M_FAIL\n  $E_CODE$ERR_CODE"
                     continue
                 else
                     ### 返回聊天室
@@ -609,7 +609,7 @@ send_a_message-dialog() {
         if [ "$RETURN" == "302" ]; then
             return 0
         else
-            dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n$E_CODE$RETURN" 0 0
+            dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
             return $RETURN
         fi
     fi
