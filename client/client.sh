@@ -609,7 +609,7 @@ send_a_message-dialog() {
         if [ $? -eq 0 ]; then
             if [ ! -z "$message" ]; then
                 if [[ "$message" =~ [\<\&\>\"\'] ]]; then
-                    dialog --backtitle "$E_ERR" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
+                    dialog --backtitle "$E_ERR - $E_INVALID" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
                     continue
                 fi
                 echo "$M_SENDING"
@@ -620,7 +620,7 @@ send_a_message-dialog() {
                 if [ "$RETURN" == "302" ]; then
                     return 0
                 else
-                    dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
+                    dialog --backtitle "$E_ERR - $RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n  $E_CODE$RETURN" 0 0
                     return $RETURN
                 fi
             fi
