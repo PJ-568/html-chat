@@ -5,6 +5,7 @@ DIALOG_AVAL=1
 LANG_SET=0
 IS_HELPER=0
 CURRENT_LANG=0
+THE_LANG="en"
 
 for i in $@; do
     if [ "$i" == "--en" ]; then
@@ -35,7 +36,7 @@ done
 ## 语言检测
 
 if [ ! $LANG_SET == 1 ]; then
-    if [ $(echo ${LANG/_/-} | grep -Ei "\\b(zh|cn)\\b") ]; then CURRENT_LANG=1; fi
+    if [ $(echo ${LANG/_/-} | grep -Ei "\\b(zh|cn)\\b") ]; then CURRENT_LANG=1; THE_LANG="zh"; fi
 fi
 
 ## 本地化
@@ -215,9 +216,8 @@ load_settings() {
 
 ## 显示主页
 show_home() {
-    HOME_TEXT="$H_SHOW_NICKNAME$NICKNAME\n$H_SHOW_ROOM$ROOM_ID\n$P_SELECT"
-
     while true; do
+        HOME_TEXT="$H_SHOW_NICKNAME$NICKNAME\n$H_SHOW_ROOM$ROOM_ID\n$P_SELECT"
         RESPONSE=$(zenity --list --title="$SOFTWARE_NAME" --width=400 --height=400 --text="$HOME_TEXT" --column="$P_OPTIN" "$H_ENTER_ROOM" "$H_UPD_INFO" "$P_SETTINGS" "$P_EXIT")
 
         case $? in
@@ -286,7 +286,7 @@ show_chat_room() {
         ### 获取聊天记录
         if [ $(($(cat $COUNTING))) -eq 0 ]; then
             (
-                RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+                RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" --data-urlencode "lang=$THE_LANG" "$SERVER_ADDRESS/log")
                 echo "60"
                 echo "# $P_FORMATTING"
                 if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
@@ -535,7 +535,7 @@ show_chat_room-dialog() {
         ### 获取聊天记录
         if [ $(($(cat $COUNTING))) -eq 0 ]; then
             echo "$C_LOAD_HIS"
-            RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+            RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" --data-urlencode "lang=$THE_LANG" "$SERVER_ADDRESS/log")
             if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
                 CHAT_LOG="${BASH_REMATCH[1]}"
                 CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
@@ -667,12 +667,12 @@ edit_info-cli() {
 
 ## 显示聊天室 - cli
 show_chat_room-cli() {
-    clear -x
     while true; do
+        clear -x
         ### 获取聊天记录
         if [ $(($(cat $COUNTING))) -eq 0 ]; then
             echo "$C_LOAD_HIS"
-            RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" "$SERVER_ADDRESS/log")
+            RESPONSE=$(curl -G -s --data-urlencode "id=$ROOM_ID" --data-urlencode "lang=$THE_LANG" "$SERVER_ADDRESS/log")
             if [[ $RESPONSE =~ \<span\>(.*)\<\/span\> ]]; then
                 CHAT_LOG="${BASH_REMATCH[1]}"
                 CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
