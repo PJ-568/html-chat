@@ -6,6 +6,7 @@ LANG_SET=0
 IS_HELPER=0
 CURRENT_LANG=0
 THE_LANG="en"
+BAD_INPUT=""
 
 for i in $@; do
     if [ "$i" == "--en" ]; then
@@ -28,6 +29,8 @@ for i in $@; do
         exit 0
     elif [ "$i" == "--help" -o "$i" == "-h" ]; then
         IS_HELPER=1
+    else
+        BAD_INPUT+="$i "
     fi
 done
 
@@ -116,8 +119,18 @@ M_FAIL="$(recho "发送失败：" "Failed to send:")"
 S_EDIT="$(recho "编辑" "Edit")"
 S_SHOW_SERVER="$(recho "服务器地址和端口：" "Server Address: ")"
 
+# 输出错误参数
+if [ ! -z "$BAD_INPUT" ]; then
+    for i in $BAD_INPUT; do
+        printf "$(recho "无效输入：$i" "Invalid input: $i")\n"
+    done
+    printf "$(recho "可运行 $0 --help 以显示所有可用参数。" "Run $0 --help to see all options.")\n"
+    exit 0
+fi
+
+# 输出帮助信息
 if [ $IS_HELPER -eq 1 ]; then
-    printf "$(recho "$SOFTWARE_NAME v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n--zh\t\t中文模式\n--en\t\t英文模式\n" "$SOFTWARE_NAME v$VERSION\n-z --zenity\tuse zenity as UI\n-d --dialog\tuse dialog as UI\n-c --cli\tuse command line as UI\n-v --version\tshow version information\n-h --help\tshow help information\n--zh\t\tChinese mode\n--en\t\tEnglish mode\n")"
+    printf "$(recho "$SOFTWARE_NAME v$VERSION\n-z --zenity\t使用 zenity 作为 UI\n-d --dialog\t使用 dialog 作为 UI\n-c --cli\t使用命令行作为 UI\n-v --version\t显示版本信息\n-h --help\t显示帮助信息\n--zh\t\t中文模式\n--en\t\t英文模式" "$SOFTWARE_NAME v$VERSION\n-z --zenity\tuse zenity as UI\n-d --dialog\tuse dialog as UI\n-c --cli\tuse command line as UI\n-v --version\tshow version information\n-h --help\tshow help information\n--zh\t\tChinese mode\n--en\t\tEnglish mode")\n"
     exit 0
 fi
 
@@ -691,7 +704,7 @@ show_chat_room-cli() {
 
         ### 显示聊天记录
         printf "\n==$SOFTWARE_NAME - $ROOM_ID==\n"
-        printf "$CHAT_LOG\n"
+        printf "\n$CHAT_LOG\n\n"
         echo "1. $C_SEND_MSG"
         echo "2. $C_REFRESH"
         echo "3. $P_BACK"
@@ -730,6 +743,7 @@ send_a_message-cli() {
             return 0
         else
             printf "$M_FAIL\n  $E_CODE$RETURN\n"
+            read
             return $RETURN
         fi
     fi
