@@ -609,7 +609,7 @@ send_a_message-dialog() {
         if [ "$RETURN" == "302" ]; then
             return 0
         else
-            dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n$E_CODE$ERR_CODE" 0 0
+            dialog --backtitle "$RETURN" --title "$E_ERR" --msgbox "$M_FAIL\n$E_CODE$RETURN" 0 0
             return $RETURN
         fi
     fi
