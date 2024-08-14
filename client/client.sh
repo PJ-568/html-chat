@@ -137,7 +137,7 @@ fi
 
 # 依赖缺失提醒
 inform_dependency() {
-    for i in "$*"; do
+    for i in $@; do
         if [ $ZENITY_AVAL -eq 1 ]; then
             zenity --warning --text="$(recho "请先安装 $i 以继续使用。" "Please install $i first to continue.")"
         elif [ $DIALOG_AVAL -eq 1 ]; then
