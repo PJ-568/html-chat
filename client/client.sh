@@ -71,6 +71,7 @@ P_BACK="$(recho "返回" "Back")"
 P_EXIT="$(recho "退出" "Exit")"
 P_FORMATTING="$(recho "正在格式化信息……" "Formatting information...")"
 P_LOGGING="$(recho "正在记录日志……" "Logging...")"
+P_PRESS="$(recho "按回车键继续。" "Press Enter to continue.")"
 
 #### 错误提示
 
@@ -742,7 +743,7 @@ send_a_message-cli() {
         if [ "$RETURN" == "302" ]; then
             return 0
         else
-            printf "$M_FAIL\n  $E_CODE$RETURN\n"
+            printf "$M_FAIL\n  $E_CODE$RETURN\n$P_PRESS"
             read
             return $RETURN
         fi
