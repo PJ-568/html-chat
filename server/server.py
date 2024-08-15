@@ -58,7 +58,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 lang = query_params.get('lang', [self.get_preferred_language()])[0]
                 
                 # 检查非法字符
-                illegal_chars = ['<', '>', '&', '"', "'"]
+                illegal_chars = ['<', '>', '&', '"', "'", "\\"]
                 if any(char in roomid for char in illegal_chars):
                     self.send_msg_error(400, "Bad Request: RoomID contains illegal characters.<br>房间号包含非法字符。")
                     return
@@ -105,7 +105,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 message = post_data.get('messageInput', [''])[0]
 
                 # 检查非法字符
-                illegal_chars = ['<', '>', '&', '"', "'"]
+                illegal_chars = ['<', '>', '&', '"', "'", "\\"]
                 if any(char in message for char in illegal_chars):
                     self.send_msg_error(400, f"Bad Request: Message contains illegal characters.<br>消息包含非法字符。", f"<a href='./chat?nickname={nickname}&roomid={roomid}'>Back | 返回</a>")
                     return
