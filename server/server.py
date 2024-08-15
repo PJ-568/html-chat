@@ -5,7 +5,7 @@ import socketserver
 import configparser
 import os
 import time
-from urllib.parse import parse_qs, quote
+from urllib.parse import urlparse, parse_qs, quote
 import argparse
 import logging
 
@@ -41,7 +41,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         try:
             if self.path == '/' or self.path == '/index.html' or self.path.startswith('/?') or self.path.startswith('/index.html?'):
-                query_string = self.path.split('?', 1)[-1]
+                query_string = urlparse(self.path).query
                 query_params = parse_qs(query_string)
                 nickname = query_params.get('nickname', [''])[0]
                 roomid = query_params.get('roomid', [''])[0]
@@ -51,7 +51,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
             elif self.path.startswith('/chat?'):
-                query_params = parse_qs(self.path.split('?', 1)[-1])
+                query_params = parse_qs(urlparse(self.path).query)
                 nickname = query_params.get('nickname', ['匿名'])[0]
                 roomid = query_params.get('roomid', ['默认'])[0]
                 message = query_params.get('messageInput', [''])[0]
@@ -68,8 +68,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid, message, lang))
             elif self.path.startswith('/log?'):
-                query_string = self.path.split('?', 1)[-1]
-                query_params = parse_qs(query_string)
+                print(self.path)
+                query_params = parse_qs(urlparse(self.path).query)
                 roomid = query_params.get('id', ['默认'])[0]
                 lang = query_params.get('lang', [self.get_preferred_language()])[0]
                 
@@ -132,6 +132,11 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     def get_preferred_language(self):
         headers = self.headers
         accept_language = headers.get('Accept-Language')
+    
+        # 检查 accept_language 是否为 None 或空字符串
+        if accept_language is None or not accept_language:
+            # 如果 Accept-Language 不存在或为空，可以设置一个默认值
+            accept_language = 'en-US,en;q=0.5'
         # 分割字符串为各个语言标签
         tags = accept_language.split(',')
         
