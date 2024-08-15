@@ -50,7 +50,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
-            elif self.path.startswith('/chat'):
+            elif self.path.startswith('/chat?'):
                 query_params = parse_qs(self.path.split('?', 1)[-1])
                 nickname = query_params.get('nickname', ['匿名'])[0]
                 roomid = query_params.get('roomid', ['默认'])[0]
@@ -67,7 +67,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid, message, lang))
-            elif self.path.startswith('/log'):
+            elif self.path.startswith('/log?'):
                 query_string = self.path.split('?', 1)[-1]
                 query_params = parse_qs(query_string)
                 roomid = query_params.get('id', ['默认'])[0]
@@ -210,8 +210,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
     def generate_home_html(self, nickname, roomid, lang='zh'):
         if lang != 'zh':
-            return f'''<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>LB-Chat</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>Home</legend><label for="nickname">Nickname:</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">Room ID:</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">Enter Chat Romm</button><a href="https://github.com/PJ-568/lb-chat/">Source Code</a><a href="?lang=zh">中文</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>LB 聊天室</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>主页</legend><label for="nickname">昵称：</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">房间号：</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">进入聊天室</button><a href="https://gitee.com/PJ-568/lb-chat/">源码</a><a href="?lang=en">English</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
+            return f'''<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>LB-Chat</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>Home</legend><label for="nickname">Nickname:</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">Room ID:</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">Enter Chat Romm</button><a href="https://github.com/PJ-568/lb-chat/">Source Code</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang=zh">中文</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>LB 聊天室</title><link type="text/css" rel="stylesheet" href="html-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>主页</legend><label for="nickname">昵称：</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">房间号：</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">进入聊天室</button><a href="https://gitee.com/PJ-568/lb-chat/">源码</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang=en">English</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div></body></html>'''.encode('utf-8')
 
     def generate_chat_html(self, nickname, roomid, message, lang='zh'):
         if lang != 'zh':
