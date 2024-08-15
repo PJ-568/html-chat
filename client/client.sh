@@ -142,16 +142,18 @@ echo "$SOFTWARE_NAME v$VERSION"
 
 # 依赖缺失提醒
 inform_dependency() {
-    for i in $@; do
-        if [ $ZENITY_AVAL -eq 1 ]; then
-            zenity --warning --text="$(recho "请先安装 $i 以继续使用。" "Please install $i first to continue.")"
-        elif [ $DIALOG_AVAL -eq 1 ]; then
-            dialog --msgbox "$(recho "安装 zenity 以获得更佳体验。\n请先安装 $i 以继续使用。" "Install zenity for better experience.\nPlease install $i first to continue.")" 0 0
-        else
-            printf >&2 "$(recho "安装 zenity 或 dialog 以获得更佳体验。\n请先安装 $i 以继续使用。" "Install zenity or dialog for better experience.\nPlease install $i first to continue.")\n";
-        fi
-    done
-    exit 1
+    if [ $ZENITY_AVAL -eq 1 ]; then
+        zenity --warning --text="$(recho "请先安装 $1 以继续使用。" "Please install $1 first to continue.")"
+    elif [ $DIALOG_AVAL -eq 1 ]; then
+        dialog --msgbox "$(recho "安装 zenity 以获得更佳体验。\n请先安装 $1 以继续使用。" "Install zenity for better experience.\nPlease install $1 first to continue.")" 0 0
+    else
+        printf >&2 "$(recho "安装 zenity 或 dialog 以获得更佳体验。\n请先安装 $1 以继续使用。" "Install zenity or dialog for better experience.\nPlease install $1 first to continue.")\n";
+    fi
+    if [ $2 -eq 1 ]; then
+        return
+    else
+        exit 1
+    fi
 }
 
 # 检查依赖
@@ -168,6 +170,7 @@ mktemp --version > /dev/null 2>&1 || { inform_dependency "mktemp"; }
 cat --version > /dev/null 2>&1 || { inform_dependency "cat"; }
 clear -V > /dev/null 2>&1 || { inform_dependency "clear"; }
 grep --version > /dev/null 2>&1 || { inform_dependency "grep"; }
+stty --version > /dev/null 2>&1 || { inform_dependency "stty"; }
 
 # 设置文件路径
 SETTINGS_FILE="${HOME}/.config/LB-Chat/setting.txt"
@@ -494,6 +497,14 @@ show_home-dialog() {
             --menu "$HOME_TEXT" 15 60 4 \
             "${OPTIONS[@]}" 2>&1 >/dev/tty)
 
+        case $? in
+            1)
+                exit 0
+            ;;
+            255)
+                exit 0
+            ;;
+        esac
         ### 根据用户的选择执行相应的操作
         case "$CHOICE" in
             "1")
@@ -534,6 +545,10 @@ edit_info-dialog() {
                 --title "$U_TITLE - $H_SHOW_ROOM" \
                 --inputbox "$U_TIC\n[$ROOM_ID]$H_SHOW_ROOM" 8 60 3>&1 1>&2 2>&3)
             exit_status=$?
+        elif [ $exit_status -eq 1 ]; then
+            return 0
+        elif [ $exit_status -eq 255 ]; then
+            return 0
         fi
 
         if [ $exit_status -eq 0 ]; then
@@ -542,7 +557,7 @@ edit_info-dialog() {
             ROOM_ID=${NEW_ROOM_ID:-"$ROOM_ID"}
 
             ### 显示更新的信息
-            dialog --msgbox "$U_UPD\n  $H_SHOW_NICKNAME $NICKNAME\n  $H_SHOW_ROOM $ROOM_ID" 10 60
+            dialog --msgbox "$U_UPD\n  $H_SHOW_NICKNAME $NICKNAME\n  $H_SHOW_ROOM $ROOM_ID" --ok-label "$P_OK" 10 60
 
             ### 保存设置并返回主页
             times_down_to_zero
@@ -550,6 +565,8 @@ edit_info-dialog() {
             return 0
         elif [ $exit_status -eq 1 ]; then
             ### 用户点击了取消按钮
+            return 0
+        elif [ $exit_status -eq 255 ]; then
             return 0
         else
             dialog --title "$E_ERR" --msgbox "$E_TEXT" 0 0
@@ -569,6 +586,7 @@ show_chat_room-dialog() {
                 CHAT_LOG="${BASH_REMATCH[1]}"
                 CHAT_LOG=$(echo "$CHAT_LOG" | sed 's/<br>/\n/g' | sed 's/<[^>]*>//g')
             fi
+            echo "$CHAT_LOG" > "$TEMP_FILE"
         else
             echo "$C_LOAD_HIS_CACHE"
         fi
@@ -581,21 +599,38 @@ show_chat_room-dialog() {
         fi
         times_down
 
-        ### 聊天记录和用户选择
+        ### 获取屏幕尺寸
+        local screen_wid=$(stty size |awk '{print $2}')
+        local screen_hei=$(stty size |awk '{print $1}')
+
+        ### 计算聊天记录窗口位置和大小
+        local win_x=$((${screen_wid} / 10 ))
+        local win_wid=$((${win_x} * 2))
+        local chat_log_x=$((${win_x} + ${win_wid} + 3))
+        local chat_log_wid=$((${screen_wid} - ${chat_log_x} - ${win_x}))
+        local chat_log_y=$((${screen_hei} / 10 ))
+        local win_hei=$((${screen_hei} - ${chat_log_y} - ${chat_log_y}))
+
+        ### 聊天记录和用户选择 TODO 自动刷新疑似不可用
         local out_time=$(($(cat $COUNTING)))
         if [ $out_time -eq 0 ]; then
             out_time=60
         fi
         ((out_time+=4))
-        code=$(dialog --no-cancel --clear --ok-label "$P_OK" --timeout $out_time --title "$SOFTWARE_NAME - $ROOM_ID" \
-            --menu "$(
-                echo "$CHAT_LOG"
-                echo
-                echo "$P_SELECT"
-            )" 0 0 0 \
+
+        code=$(dialog --timeout $out_time --title "$SOFTWARE_NAME - $ROOM_ID" --begin $chat_log_y $chat_log_x --tailboxbg $TEMP_FILE $win_hei $chat_log_wid --and-widget --begin $chat_log_y $win_x --no-cancel --clear --ok-label "$P_OK" --menu "$P_SELECT" $((${win_hei} - 3)) $win_wid 0 \
             "1" "$C_SEND_MSG" \
             "2" "$C_REFRESH" \
             "3" "$P_BACK" 2>&1 >/dev/tty)
+
+        case $? in
+            1)
+                return 0
+            ;;
+            255)
+                return 0
+            ;;
+        esac
 
         case $code in
             1)
@@ -733,6 +768,7 @@ show_chat_room-cli() {
         ### 判断聊天记录是否正常获取
         if [ -z "$CHAT_LOG" ]; then
             printf "$C_FAIL_LOAD\n$E_NETWORK\n"
+            read -s -n1 -p "$P_PRESS"
             times_down_to_zero
             return 1
         fi
@@ -789,8 +825,8 @@ send_a_message-cli() {
             if [ "$RETURN" == "302" ]; then
                 return 0
             else
-                printf "$M_FAIL\n  $E_CODE$RETURN\n$P_PRESS"
-                read
+                printf "$M_FAIL\n  $E_CODE$RETURN\n"
+                read -s -n1 -p "$P_PRESS"
                 return $RETURN
             fi
         fi
