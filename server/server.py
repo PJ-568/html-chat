@@ -92,7 +92,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_msg_error(404, "Not Found.<br>未找到该资源。")
         except Exception as e:
             logging.error(f"Error processing GET request: {e}")
-            self.send_msg_error(500, "Server got itself in trouble.<br>服务器出错。")
+            self.send_msg_error(500, f"Server got itself in trouble.<br>服务器出错。<br>{e}")
 
     def do_POST(self):
         try:
@@ -127,7 +127,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_msg_error(404, "Not Found.<br>未找到该资源。")
         except Exception as e:
             logging.error(f"Error processing POST request: {e}")
-            self.send_msg_error(500, "Server got itself in trouble.<br>服务器出错。")
+            self.send_msg_error(500, f"Server got itself in trouble.<br>服务器出错。<br>{e}")
     
     def get_preferred_language(self):
         headers = self.headers
