@@ -151,6 +151,13 @@ inform_dependency() {
 # 检查依赖
 if [ $ZENITY_AVAL -eq 1 ]; then
     zenity --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 zenity 以获得更佳体验。" "Install zenity for better experience.")\n"; ZENITY_AVAL=0; }
+    if [[ "$XDG_SESSION_TYPE" == "x11" ]] || [[ -n "$WAYLAND_DISPLAY" ]] || [[ -n "$DISPLAY" ]]; then
+        recho "检测到图形界面。" "Graphical environment detected."
+    else
+        recho "未检测到图形界面。" "No graphical environment detected."
+        ZENITY_AVAL=0
+        DIALOG_AVAL=1
+    fi
 fi
 if [ $DIALOG_AVAL -eq 1 ]; then
     dialog --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 dialog 以获得更佳体验。" "Install dialog for better experience.")\n"; DIALOG_AVAL=0; }
