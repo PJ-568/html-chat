@@ -170,7 +170,7 @@ mktemp --version > /dev/null 2>&1 || { inform_dependency "mktemp"; }
 cat --version > /dev/null 2>&1 || { inform_dependency "cat"; }
 clear -V > /dev/null 2>&1 || { inform_dependency "clear"; }
 grep --version > /dev/null 2>&1 || { inform_dependency "grep"; }
-stty --version > /dev/null 2>&1 || { inform_dependency "stty"; }
+stty --version > /dev/null 2>&1 || { inform_dependency "stty" 1; }
 
 # 设置文件路径
 SETTINGS_FILE="${HOME}/.config/LB-Chat/setting.txt"
