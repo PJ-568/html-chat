@@ -58,12 +58,10 @@ recho() {
 ### 公共
 
 #### 基本信息
-
 SOFTWARE_NAME="$(recho "LB 聊天室" "LB-Chat")"
 VERSION="0.1.0"
 
 #### 提示
-
 P_SELECT="$(recho "请选择操作。" "Please select an option.")"
 P_OPTIN="$(recho "选项" "Options")"
 P_SETTINGS="$(recho "设置" "Settings")"
@@ -75,7 +73,6 @@ P_PRESS="$(recho "按回车键继续。" "Press Enter to continue.")"
 P_OK="$(recho "确认" "OK")"
 
 #### 错误提示
-
 E_ERR="$(recho "错误" "Error")"
 E_TEXT="$(recho "发生意外错误。" "An unexpected error has occurred.")"
 E_EXIT="$(recho "发生意外错误。软件即将退出。" "An unexpected error has occurred. The software will exit.")"
@@ -85,21 +82,18 @@ E_INVALID="$(recho "无效输入。" "Invalid input.")"
 E_TOOLONG="$(recho "输入过长。" "Input too long.")"
 
 ### 主页
-
 H_SHOW_NICKNAME="$(recho "昵称：" "Nickname: ")"
 H_SHOW_ROOM="$(recho "房间号：" "Room ID: ")"
 H_ENTER_ROOM="$(recho "进入房间" "Enter Chat Room")"
 H_UPD_INFO="$(recho "更新昵称和房间号" "Update Nickname and Room ID")"
 
 ### 更新档案
-
 U_TITLE="$(recho "更新信息" "Update Info")"
 U_TIC="$(recho "请输入新的信息，留空则维持原样。" "Please enter new info, leave blank to keep the original one.")"
 U_SHOW_NICKNAME="$(recho "昵称：" "Nickname: ")"
 U_UPD="$(recho "已更新：" "Updated:")"
 
 ### 聊天室
-
 C_ENTERING="$(recho "进入聊天室" "Loading Chat Room")"
 C_LOAD_HIS="$(recho "正在获取聊天记录……" "Loading chat history...")"
 C_LOAD_HIS_CACHE="$(recho "从缓存读取聊天记录……" "Loading from cache...")"
@@ -111,14 +105,12 @@ C_SEND_MSG="$(recho "发送消息" "Send Message")"
 C_REFRESH="$(recho "刷新" "Refresh")"
 
 ### 发送
-
 M_SEND="$(recho "发送" "Send")"
 M_SAY="$(recho "说：" "Says: ")"
 M_SENDING="$(recho "正在发送……" "Sending...")"
 M_FAIL="$(recho "发送失败：" "Failed to send:")"
 
 ### 设置
-
 S_EDIT="$(recho "编辑" "Edit")"
 S_SHOW_SERVER="$(recho "服务器地址和端口：" "Server Address: ")"
 
