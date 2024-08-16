@@ -161,6 +161,7 @@ if [ $ZENITY_AVAL -eq 1 ]; then
 fi
 if [ $DIALOG_AVAL -eq 1 ]; then
     dialog --version > /dev/null 2>&1 || { printf >&2 "$(recho "安装 dialog 以获得更佳体验。" "Install dialog for better experience.")\n"; DIALOG_AVAL=0; }
+    stty --version > /dev/null 2>&1 || { inform_dependency "stty"; }
 fi
 curl --version > /dev/null 2>&1 || { inform_dependency "curl"; }
 mkdir --version > /dev/null 2>&1 || { inform_dependency "mkdir"; }
@@ -169,7 +170,6 @@ mktemp --version > /dev/null 2>&1 || { inform_dependency "mktemp"; }
 cat --version > /dev/null 2>&1 || { inform_dependency "cat"; }
 clear -V > /dev/null 2>&1 || { inform_dependency "clear"; }
 grep --version > /dev/null 2>&1 || { inform_dependency "grep"; }
-stty --version > /dev/null 2>&1 || { inform_dependency "stty" 1; }
 
 # 设置文件路径
 SETTINGS_FILE="${HOME}/.config/LB-Chat/setting.txt"
