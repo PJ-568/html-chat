@@ -48,6 +48,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 lang = query_params.get('lang', [self.get_preferred_language()])[0]
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
+                self.send_header('Cache-Control', 'public, max-age=86400')
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
             elif self.path.startswith('/chat?'):
@@ -65,6 +66,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
+                self.send_header('Cache-Control', 'public, max-age=86400')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid, message, lang))
             elif self.path.startswith('/log?'):
@@ -81,11 +83,13 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
+                self.send_header('Cache-Control', 'public, max-age=60')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_log_html(roomid, lang))
             elif self.path.endswith('.css'):
                 self.send_response(200)
                 self.send_header('Content-type', 'text/css')
+                self.send_header('Cache-Control', 'public, max-age=86400')
                 self.end_headers()
                 self.wfile.write(self.generate_css())
             else:
