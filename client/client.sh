@@ -115,7 +115,7 @@ S_EDIT="$(recho "编辑" "Edit")"
 S_SHOW_SERVER="$(recho "服务器地址和端口：" "Server Address: ")"
 
 # 输出错误参数
-if [ ! -z "$BAD_INPUT" ]; then
+if [ -n "$BAD_INPUT" ]; then
     for i in $BAD_INPUT; do
         printf "$(recho "无效参数：`$i`" "Invalid argument: `$i`")\n"
     done
@@ -384,7 +384,7 @@ send_a_message() {
 
         case $? in
             0)
-                if [ ! -z "$MESSAGE" ]; then
+                if [ -n "$MESSAGE" ]; then
                     if [[ "$MESSAGE" =~ [\<\&\>\"\'\\] ]]; then
                         zenity --error --text="$E_INVALID"
                         continue
@@ -422,7 +422,7 @@ send_a_message() {
 
                 ### 判断发送是否成功
                 local ERR_CODE=$(cat "$TEMP_FILE")
-                if [ ! -z "$ERR_CODE" ]; then
+                if [ -n "$ERR_CODE" ]; then
                     echo "$M_FAIL"
                     echo "  $E_CODE$ERR_CODE"
                     zenity --error --text="$M_FAIL\n  $E_CODE$ERR_CODE"
@@ -650,7 +650,7 @@ send_a_message-dialog() {
             2>&1 >/dev/tty)
 
         if [ $? -eq 0 ]; then
-            if [ ! -z "$message" ]; then
+            if [ -n "$message" ]; then
                 if [[ "$message" =~ [\<\&\>\"\'\\] ]]; then
                     dialog --backtitle "$E_ERR - $E_INVALID" --title "$E_ERR" --msgbox "$E_INVALID" 0 0
                     continue
@@ -718,7 +718,7 @@ edit_info-cli() {
 
     read choice0
 
-    if [ ! -z "$choice0" ]; then
+    if [ -n "$choice0" ]; then
         NICKNAME="$choice0"
         is_updated=1
     fi
@@ -728,7 +728,7 @@ edit_info-cli() {
 
     read choice1
 
-    if [ ! -z "$choice1" ]; then
+    if [ -n "$choice1" ]; then
         ROOM_ID="$choice1"
         is_updated=1
     fi
@@ -798,7 +798,7 @@ send_a_message-cli() {
 
         read message
 
-        if [ ! -z "$message" ]; then
+        if [ -n "$message" ]; then
             if [[ "$message" =~ [\<\&\>\"\'\\] ]]; then
                 echo "$E_INVALID"
                 read -s -n1 -p "$P_PRESS"
@@ -833,7 +833,7 @@ show_settings-cli() {
 
     read choice0
 
-    if [ ! -z "$choice0" ]; then
+    if [ -n "$choice0" ]; then
         SERVER_ADDRESS="$choice0"
     else
         SERVER_ADDRESS="https://chat.serv.pj568.sbs"
