@@ -21,7 +21,7 @@
                     "body container",
                     ".pjax-reload"
                 ],
-                currentUrlFullReload: true
+                cacheBust: false
             });
         } catch (e) {
             console.log('PJAX 初始化出错：' + e);
