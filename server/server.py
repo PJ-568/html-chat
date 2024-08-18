@@ -121,6 +121,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 nickname = post_data.get('nickname', ['匿名'])[0]
                 roomid = post_data.get('roomid', ['默认'])[0]
                 message = post_data.get('messageInput', [''])[0]
+                lang = post_data.get('lang', [self.get_preferred_language()])[0]
 
                 # 检查非法字符
                 illegal_chars = ['<', '>', '&', '"', "'", "\\"]
@@ -136,7 +137,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                         self.send_msg_error(413, f"Request Entity Too Large or is Null.<br>消息过长或为空。", f"<a href='./chat?nickname={nickname}&roomid={roomid}&messageInput={message}'>Back | 返回</a>")
                         return
                     self.send_response(302)
-                    self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}')
+                    self.send_header('Location', f'/chat?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}')
                     self.end_headers()
                     self.save_rooms() # 不执行会导致用户无法第一时间读取最新聊天记录
                 else:
