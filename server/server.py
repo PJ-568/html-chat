@@ -27,6 +27,8 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     max_messages_per_room = 50
     max_message_length = 1024
     max_messages_per_minute = 45
+    max_cache_time = 86400
+    auto_refresh_interval = 60
     message_rate_limit = {}  # To track messages per minute
 
     def __init__(self, *args, **kwargs):
@@ -48,7 +50,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 lang = query_params.get('lang', [self.get_preferred_language()])[0]
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', 'public, max-age=86400')
+                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
             elif self.path.startswith('/chat?'):
@@ -66,7 +68,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', 'public, max-age=86400')
+                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid, message, lang))
             elif self.path.startswith('/log?'):
@@ -83,25 +85,25 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', 'public, max-age=60')
+                self.send_header('Cache-Control', f'public, max-age={auto_refresh_interval}')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_log_html(roomid, lang))
             elif self.path == '/lb-chat.css':
                 self.send_response(200)
                 self.send_header('Content-type', 'text/css')
-                self.send_header('Cache-Control', 'public, max-age=86400')
+                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_css())
             elif self.path == '/main.js':
                 self.send_response(200)
                 self.send_header('Content-type', 'text/javascript')
-                self.send_header('Cache-Control', 'public, max-age=86400')
+                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_js())
             elif self.path == '/favicon.ico':
                 self.send_response(200)
                 self.send_header('Content-type', 'image/svg+xml')
-                self.send_header('Cache-Control', 'public, max-age=86400')
+                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_favicon())
             else:
@@ -252,7 +254,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             empty_msg = '无聊天记录'
         messages = self.rooms.get(roomid, [])
         chat_log = '<br>'.join(messages) if messages else f'<p style="color:#ccc">{empty_msg}</p>'
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天记录 - {roomid}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="60"></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天记录 - {roomid}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="{auto_refresh_interval}"></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
 
     def generate_error_html(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页 | Back</a>"):
         if not errorMsg:
