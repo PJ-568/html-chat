@@ -50,7 +50,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 lang = query_params.get('lang', [self.get_preferred_language()])[0]
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
+                self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
             elif self.path.startswith('/chat?'):
@@ -68,7 +68,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
+                self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid, message, lang))
             elif self.path.startswith('/log?'):
@@ -85,25 +85,25 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', f'public, max-age={auto_refresh_interval}')
+                self.send_header('Cache-Control', f'public, max-age={self.auto_refresh_interval}')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_log_html(roomid, lang))
             elif self.path == '/lb-chat.css':
                 self.send_response(200)
                 self.send_header('Content-type', 'text/css')
-                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
+                self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_css())
             elif self.path == '/main.js':
                 self.send_response(200)
                 self.send_header('Content-type', 'text/javascript')
-                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
+                self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_js())
             elif self.path == '/favicon.ico':
                 self.send_response(200)
                 self.send_header('Content-type', 'image/svg+xml')
-                self.send_header('Cache-Control', f'public, max-age={max_cache_time}')
+                self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_favicon())
             else:
@@ -239,27 +239,27 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
     def generate_home_html(self, nickname, roomid, lang='zh'):
         if lang != 'zh':
-            return f'''<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>LB-Chat</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>Home</legend><label for="nickname">Nickname:</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">Room ID:</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">Enter Chat Romm</button><a href="https://github.com/PJ-568/lb-chat/">Source Code</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang=zh">中文</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>LB 聊天室</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>主页</legend><label for="nickname">昵称：</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">房间号：</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">进入聊天室</button><a href="https://gitee.com/PJ-568/lb-chat/">源码</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang=en">English</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+            return f'''<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>LB-Chat</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>Home</legend><label for="nickname">Nickname:</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">Room ID:</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">Enter Chat Romm</button><a href="https://github.com/PJ-568/lb-chat/">Source Code</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang=zh">中文</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>LB 聊天室</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>主页</legend><label for="nickname">昵称：</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">房间号：</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">进入聊天室</button><a href="https://gitee.com/PJ-568/lb-chat/">源码</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang=en">English</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
 
     def generate_chat_html(self, nickname, roomid, message, lang='zh'):
         if lang != 'zh':
-            return f'''<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>LB-Chat - {roomid}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>LB-Chat - {roomid}</legend><iframe title="Chat history" src="./log?id={roomid}&lang={lang}" frameborder="0"></iframe><br><label for="messageInput">{nickname} says:</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">Send</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}">Back</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>LB 聊天室 - {roomid}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>聊天室 - {roomid}</legend><iframe title="聊天记录" src="./log?id={roomid}&lang={lang}" frameborder="0"></iframe><br><label for="messageInput">{nickname}说：</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">发送</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}">退出</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+            return f'''<!DOCTYPE html><html lang="en-US"><head><meta charset="UTF-8"><title>LB-Chat - {roomid}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>LB-Chat - {roomid}</legend><iframe title="Chat history" src="./log?id={roomid}&lang={lang}" frameborder="0"></iframe><br><label for="messageInput">{nickname} says:</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">Send</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}">Back</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>LB 聊天室 - {roomid}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>聊天室 - {roomid}</legend><iframe title="聊天记录" src="./log?id={roomid}&lang={lang}" frameborder="0"></iframe><br><label for="messageInput">{nickname}说：</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">发送</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}">退出</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" style="display: none;"><input type="text" id="roomid" name="roomid" value="{roomid}" style="display: none;"><input type="text" id="lang" name="lang" value="{lang}" style="display: none;"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
 
-    def generate_chat_log_html(self, roomid, lang='zh'):
+    def generate_chat_log_html(self, roomid, lang = 'zh'):
         if lang != 'zh':
             empty_msg = 'No messages yet'
         else:
             empty_msg = '无聊天记录'
         messages = self.rooms.get(roomid, [])
         chat_log = '<br>'.join(messages) if messages else f'<p style="color:#ccc">{empty_msg}</p>'
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天记录 - {roomid}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="{auto_refresh_interval}"></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>聊天记录 - {roomid}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="{self.auto_refresh_interval}"></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
 
     def generate_error_html(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页 | Back</a>"):
         if not errorMsg:
             errorMsg = f'错误代码：{errorCode}<br>Error code: {errorCode}'
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>错误：{errorCode}</title><link type="text/css" rel="stylesheet" href="/lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="/main.js" type="text/javascript"></script></head><body><div class="container"><fieldset><legend>错误：{errorCode}</legend><div class="content">{errorMsg}</div>{buttons}</fieldset></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>错误：{errorCode}</title><link type="text/css" rel="stylesheet" href="/lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="/main.js" type="text/javascript"></script></head><body><div class="container"><fieldset><legend>错误：{errorCode}</legend><div class="content">{errorMsg}</div>{buttons}</fieldset></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
 
     def send_msg_error(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页 | Back</a>"):
         self.send_response(errorCode)
