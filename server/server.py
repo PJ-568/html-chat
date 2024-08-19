@@ -85,7 +85,6 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
                 self.send_response(200)
                 self.send_header('Content-type', 'text/html')
-                self.send_header('Cache-Control', f'public, max-age={self.auto_refresh_interval}')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_log_html(roomid, lang))
             elif self.path == '/lb-chat.css':
