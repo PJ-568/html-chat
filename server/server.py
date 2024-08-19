@@ -251,6 +251,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             show_roomid = 'Room ID:'
             enter_room = 'Enter Chat Room'
             source_code = 'Source Code'
+            source_code_url = 'https://github.com/PJ-568/lb-chat'
             switch_lang = '中文'
             to_lang = 'zh'
         else:
@@ -261,9 +262,10 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             show_roomid = '房间号：'
             enter_room = '进入聊天室'
             source_code = '源码'
+            source_code_url = 'https://gitee.com/PJ-568/lb-chat'
             switch_lang = 'English'
             to_lang = 'en'
-        return f'''<!DOCTYPE html><html lang="{head_lang}"><head><meta charset="UTF-8"><title>{title}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>{legend}</legend><label for="nickname">{show_nickname}</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">{show_roomid}</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">{enter_room}</button><a href="https://gitee.com/PJ-568/lb-chat/" target="_blank">{source_code}</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={to_lang}">{switch_lang}</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" class="hide"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="{head_lang}"><head><meta charset="UTF-8"><title>{title}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./chat" method="get"><fieldset><legend>{legend}</legend><label for="nickname">{show_nickname}</label><input type="text" id="nickname" name="nickname" value="{nickname}" placeholder="匿名"><br><label for="roomid">{show_roomid}</label><input type="text" id="roomid" name="roomid" value="{roomid}" placeholder="默认"><br><button type="submit">{enter_room}</button><a href="{source_code_url}" target="_blank">{source_code}</a><a href="?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={to_lang}">{switch_lang}</a></fieldset><input type="text" id="lang" name="lang" value="{lang}" class="hide"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
 
     def generate_chat_html(self, nickname, roomid, message, lang='zh'):
         if lang != 'zh':
