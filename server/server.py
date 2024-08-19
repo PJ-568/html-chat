@@ -264,16 +264,18 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         if lang != 'zh':
             head_lang = 'en-US'
             title = 'LB-Chat'
+            chat_log = 'Chat Log'
             says = ' says:'
             send = 'Send'
             back = 'Back'
         else:
             head_lang = 'zh-Hans'
             title = 'LB 聊天室'
+            chat_log = '聊天记录'
             says = '说：'
             send = '发送'
             back = '返回'
-        return f'''<!DOCTYPE html><html lang="{head_lang}"><head><meta charset="UTF-8"><title>{title} - {roomid}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>{title} - {roomid}</legend><iframe title="聊天记录" src="./log?id={roomid}&lang={lang}" frameborder="0"></iframe><br><label for="messageInput">{nickname}{says}</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">{send}</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}">{back}</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" class="hide"><input type="text" id="roomid" name="roomid" value="{roomid}" class="hide"><input type="text" id="lang" name="lang" value="{lang}" class="hide"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="{head_lang}"><head><meta charset="UTF-8"><title>{title} - {roomid}</title><link type="text/css" rel="stylesheet" href="lb-chat.css"><meta name="viewport" content="width=192, initial-scale=1.0"><script src="//lib.baomitu.com/pjax/0.2.8/pjax.min.js" type="text/javascript"></script><script src="main.js" type="text/javascript"></script></head><body><div class="container"><form action="./send_message" method="post"><fieldset><legend>{title} - {roomid}</legend><iframe title="{chat_log}" src="./log?id={roomid}&lang={lang}" frameborder="0"></iframe><br><label for="messageInput">{nickname}{says}</label><input type="text" id="messageInput" name="messageInput" value="{message}"><button type="submit">{send}</button><a href=".?nickname={quote(nickname)}&roomid={quote(roomid)}&lang={quote(lang)}">{back}</a></fieldset><input type="text" id="nickname" name="nickname" value="{nickname}" class="hide"><input type="text" id="roomid" name="roomid" value="{roomid}" class="hide"><input type="text" id="lang" name="lang" value="{lang}" class="hide"></form></div><div class="loading-bar"><div class="progress"></div></div></body></html>'''.encode('utf-8')
 
     def generate_chat_log_html(self, roomid, lang = 'zh'):
         if lang != 'zh':
