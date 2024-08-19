@@ -236,7 +236,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
         return f'''(function(){{var loadingBar=document.querySelector(".loading-bar");var progress=document.querySelector(".loading-bar .progress");var timer=null;let pjax;function initAni(){{loadingBar=document.querySelector(".loading-bar");progress=document.querySelector(".loading-bar .progress")}}function initPjax(){{try{{const Pjax=window.Pjax||function(){{}};pjax=new Pjax({{selectors:["head meta","head title","body .container",".pjax-reload"],cacheBust:false}})}}catch(e){{console.log('PJAX 初始化出错：'+e)}}}}function endLoad(){{clearInterval(timer);progress.style.width="100%";loadingBar.classList.remove("loading");setTimeout(function(){{progress.style.width=0}},400)}}function initialize(){{initPjax();initAni()}}window.addEventListener('DOMContentLoaded',()=>initialize());document.addEventListener("pjax:send",function(){{var loadingBarWidth=20;var MAX_LOADING_WIDTH=95;loadingBar.classList.add("loading");progress.style.width=loadingBarWidth+"%";clearInterval(timer);timer=setInterval(function(){{loadingBarWidth+=3;if(loadingBarWidth>MAX_LOADING_WIDTH){{loadingBarWidth=MAX_LOADING_WIDTH}}progress.style.width=loadingBarWidth+"%"}},500)}});document.addEventListener("pjax:complete",function(){{endLoad()}})}})();'''.encode('utf-8')
 
     def generate_favicon(self):
-        return f'''<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><circle cx="25" cy="25" r="20" fill="blue" /></svg>'''.encode('utf-8')
+        return '''<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><circle cx="25" cy="25" r="20" fill="blue" /></svg>'''.encode('utf-8')
 
     def generate_home_html(self, nickname, roomid, lang='zh'):
         if lang != 'zh':
