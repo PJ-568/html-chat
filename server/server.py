@@ -41,7 +41,11 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         try:
-            if self.path == '/' or self.path == '/index.html' or self.path.startswith('/?') or self.path.startswith('/index.html?'):
+            if self.path.startswith('/./'):
+                self.send_response(301)
+                self.send_header('Location', self.path[2:])
+                self.end_headers()
+            elif self.path == '/' or self.path == '/index.html' or self.path.startswith('/?') or self.path.startswith('/index.html?'):
                 query_string = urlparse(self.path).query
                 query_params = parse_qs(query_string)
                 nickname = query_params.get('nickname', [''])[0]
