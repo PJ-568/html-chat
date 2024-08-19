@@ -45,7 +45,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_response(301)
                 self.send_header('Location', self.path[2:])
                 self.end_headers()
-            elif self.path == '/' or self.path == '/index.html' or self.path.startswith('/?') or self.path.startswith('/index.html?'):
+            elif self.path == '/' or self.path == '/index.html' or self.path.startswith('/?') or self.path.startswith('/index.html'):
                 query_string = urlparse(self.path).query
                 query_params = parse_qs(query_string)
                 nickname = query_params.get('nickname', [''])[0]
@@ -56,7 +56,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
-            elif self.path.startswith('/chat?'):
+            elif self.path.startswith('/chat'):
                 query_params = parse_qs(urlparse(self.path).query)
                 nickname = query_params.get('nickname', ['匿名'])[0]
                 roomid = query_params.get('roomid', ['默认'])[0]
