@@ -49,7 +49,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                 roomid = query_params.get('roomid', [''])[0]
                 lang = query_params.get('lang', [self.get_preferred_language()])[0]
                 self.send_response(200)
-                self.send_header('Content-type', 'text/html')
+                self.send_header('Content-type', 'text/html; charset=utf-8')
                 self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_home_html(nickname, roomid, lang))
@@ -67,7 +67,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     return
 
                 self.send_response(200)
-                self.send_header('Content-type', 'text/html')
+                self.send_header('Content-type', 'text/html; charset=utf-8')
                 self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_html(nickname, roomid, message, lang))
@@ -84,17 +84,19 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
                     return
 
                 self.send_response(200)
-                self.send_header('Content-type', 'text/html')
+                self.send_header('Content-type', 'text/html; charset=utf-8')
                 self.end_headers()
                 self.wfile.write(self.generate_chat_log_html(roomid, lang))
             elif self.path == '/lb-chat.css':
                 self.send_response(200)
+                self.send_header('X-Content-Type-Options', 'nosniff')
                 self.send_header('Content-type', 'text/css')
                 self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
                 self.wfile.write(self.generate_css())
             elif self.path == '/main.js':
                 self.send_response(200)
+                self.send_header('X-Content-Type-Options', 'nosniff')
                 self.send_header('Content-type', 'text/javascript')
                 self.send_header('Cache-Control', f'public, max-age={self.max_cache_time}')
                 self.end_headers()
@@ -263,7 +265,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
 
     def send_msg_error(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页 | Back</a>"):
         self.send_response(errorCode)
-        self.send_header('Content-type', 'text/html')
+        self.send_header('Content-type', 'text/html; charset=utf-8')
         self.end_headers()
         self.wfile.write(self.generate_error_html(errorCode, errorMsg, buttons))
 
