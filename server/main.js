@@ -18,7 +18,7 @@
                 selectors: [
                     "head meta",
                     "head title",
-                    "body container",
+                    "body .container",
                     ".pjax-reload"
                 ],
                 cacheBust: false
