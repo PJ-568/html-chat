@@ -266,6 +266,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
     def send_msg_error(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页 | Back</a>"):
         self.send_response(errorCode)
         self.send_header('Content-type', 'text/html; charset=utf-8')
+        self.send_header('Cache-Control', 'public, max-age=15')
         self.end_headers()
         self.wfile.write(self.generate_error_html(errorCode, errorMsg, buttons))
 
