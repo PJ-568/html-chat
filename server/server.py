@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import threading
 import http.server
 import socketserver
@@ -288,7 +287,7 @@ class ChatServer(http.server.BaseHTTPRequestHandler):
             empty_msg = '无聊天记录'
         messages = self.rooms.get(roomid, [])
         chat_log = '<br>'.join(messages) if messages else f'<p style="color:#ccc">{empty_msg}</p>'
-        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>{title} - {roomid}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh" content="{self.auto_refresh_interval}"></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
+        return f'''<!DOCTYPE html><html lang="zh-Hans"><head><meta charset="UTF-8"><title>{title}-{roomid}</title><meta name="viewport"content="width=device-width, initial-scale=1.0"><meta http-equiv="refresh"content="{{self.auto_refresh_interval}}"><script>document.addEventListener('DOMContentLoaded',function(){{window.scrollTo(0,document.documentElement.scrollHeight)}});</script></head><body style="font-family: Arial, sans-serif;"><span>{chat_log}</span></body></html>'''.encode('utf-8')
 
     def generate_error_html(self, errorCode, errorMsg = '', buttons = "<a href='/'>返回主页 | Back</a>"):
         if not errorMsg:
